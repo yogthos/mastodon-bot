@@ -6,8 +6,8 @@ and post it to Mastodon
 ### installation
 
 1. install [Node.js](https://nodejs.org/en/)
-2. install [Lumo](https://github.com/anmonteiro/lumo): `npm install -g lumo-cljs`
-3. run `npm install` to install Node modules
+2. run `npm install` to install Node modules
+3. run `npm start` to, well, start
 
 ### usage
 
