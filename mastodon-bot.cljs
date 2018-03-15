@@ -20,7 +20,9 @@
 (def config (-> (find-config) fs/readFileSync str edn/read-string))
 
 (def mastodon-client (or (some-> config :mastodon clj->js mastodon.)
-                         (js/console.error "missing Mastodon client configuration!")))
+                         (do
+                           (js/console.error "missing Mastodon client configuration!")
+                           (js/process.exit 1))))
 
 (defn js->edn [data]
   (js->clj data :keywordize-keys true))
