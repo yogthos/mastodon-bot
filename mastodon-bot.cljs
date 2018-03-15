@@ -3,20 +3,24 @@
   (:require
    [cljs.core :refer [*command-line-args*]]
    [cljs.reader :as edn]
+   [clojure.set :refer [rename-keys]]
+   [clojure.string :as string]
    ["fs" :as fs]
+   ["http" :as http]
    ["https" :as https]
    ["mastodon-api" :as mastodon]
+   ["tumblr" :as tumblr]
    ["twitter" :as twitter]))
 
-(def config (-> (or (first *command-line-args*)
-                    (-> js/process .-env .-MASTODON_BOT_CONFIG)
-                    "config.edn")
-                fs/readFileSync
-                str
-                edn/read-string))
-(def mastodon-client (mastodon. (-> config :mastodon clj->js)))
-(def twitter-client (twitter. (-> config :twitter :access-keys clj->js)))
-(def twitter-accounts (-> config :twitter :accounts))
+(defn find-config []
+  (or (first *command-line-args*)
+      (-> js/process .-env .-MASTODON_BOT_CONFIG)
+      "config.edn"))
+
+(def config (-> (find-config) fs/readFileSync str edn/read-string))
+
+(def mastodon-client (or (some-> config :mastodon clj->js mastodon.)
+                         (js/console.error "missing Mastodon client configuration!")))
 
 (defn js->edn [data]
   (js->clj data :keywordize-keys true))
@@ -41,13 +45,19 @@
    (post-status-with-images status-text urls []))
   ([status-text [url & urls] ids]
    (if url
-     (.get https url
+     (.get (if (string/starts-with? url "https://") https http) url
            (fn [image-stream]
              (post-image image-stream status-text #(post-status-with-images status-text urls (conj ids %)))))
      (post-status status-text (not-empty ids)))))
 
 (defn get-mastodon-timeline [callback]
   (.then (.get mastodon-client "timelines/home" #js {}) #(-> % .-data js->edn callback)))
+
+(defn post-items [last-post-time items]
+  (doseq [{:keys [text media-links]} (filter #(> (:created-at %) last-post-time) items)]
+    (if media-links
+      (post-status-with-images text media-links)
+      (post-status text))))
 
 (defn parse-tweet [{created-at            :created_at
                     text                  :text
@@ -57,20 +67,43 @@
    :text (str text "\n - " screen_name)
    :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
 
+(defmulti parse-tumblr-post :type)
+
+(defmethod parse-tumblr-post "text" [{:keys [body date short_url]}]
+  {:created-at (js/Date. date)
+   :text (str body "\n\n" short_url)})
+
+(defmethod parse-tumblr-post "photo" [{:keys [caption date photos short_url] :as post}]
+  {:created-at (js/Date. date)
+   :text (string/join "\n" [(string/replace caption #"<[^>]*>" "") short_url])
+   :media-links (mapv #(-> % :original_size :url) photos)})
+
+(defmethod parse-tumblr-post :default [post]
+  (:type post))
+
+(defn post-tumblrs [last-post-time]
+  (fn [err response]
+    (->> response
+         js->edn
+         :posts
+         (mapv parse-tumblr-post)
+         (post-items last-post-time))))
+
 (defn post-tweets [last-post-time]
   (fn [error tweets response]
-    (when tweets
-      (doseq [{:keys [text media-links]} (->> (js->edn tweets)
-                                              (map parse-tweet)
-                                              (filter #(> (:created-at %) last-post-time)))]
-        (if media-links
-          (post-status-with-images text media-links)
-          (post-status text))))))
+    (->> (js->edn tweets)
+         (map parse-tweet)
+         (post-items last-post-time))))
 
 (get-mastodon-timeline
  (fn [timeline]
-   (doseq [account twitter-accounts]
-     (.get twitter-client
-           "statuses/user_timeline"
-           #js {:screen_name account :include_rts false}
-           (-> timeline first :created_at (js/Date.) post-tweets)))))
+   (let [last-post-time (-> timeline first :created_at (js/Date.))]
+     (when-let [twitter-client (some-> config :twitter :access-keys clj->js twitter.)]
+         (doseq [account (-> config :twitter :accounts)]
+           (.get twitter-client
+                 "statuses/user_timeline"
+                 #js {:screen_name account :include_rts false}
+                 (post-tweets last-post-time))))
+     (when-let [tumblr-oauth (some-> config :tumblr :access-keys clj->js)]
+       (when-let [tumblr-client (some-> config :tumblr :accounts first (tumblr/Blog. tumblr-oauth))]
+         (.posts tumblr-client #js {:limit 5} (post-tumblrs last-post-time)))))))
