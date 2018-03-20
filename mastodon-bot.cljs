@@ -9,6 +9,7 @@
    ["http" :as http]
    ["https" :as https]
    ["mastodon-api" :as mastodon]
+   ["rss-parser" :as rss]
    ["tumblr" :as tumblr]
    ["twitter" :as twitter]))
 
@@ -97,15 +98,30 @@
          (map parse-tweet)
          (post-items last-post-time))))
 
+(defn parse-feed [last-post-time parser [title url]]
+  (-> (.parseURL parser url)
+      (.then #(post-items
+               last-post-time
+               (for [{:keys [title isoDate content link]} (-> % js->edn :items)]
+                 {:created-at (js/Date. isoDate)
+                  :text (str title "\n\n" link)})))))
+
 (get-mastodon-timeline
  (fn [timeline]
    (let [last-post-time (-> timeline first :created_at (js/Date.))]
+     ;;post from Twitter
      (when-let [twitter-client (some-> config :twitter :access-keys clj->js twitter.)]
          (doseq [account (-> config :twitter :accounts)]
            (.get twitter-client
                  "statuses/user_timeline"
                  #js {:screen_name account :include_rts false}
                  (post-tweets last-post-time))))
+     ;;post from Tumblr
      (when-let [tumblr-oauth (some-> config :tumblr :access-keys clj->js)]
        (when-let [tumblr-client (some-> config :tumblr :accounts first (tumblr/Blog. tumblr-oauth))]
-         (.posts tumblr-client #js {:limit 5} (post-tumblrs last-post-time)))))))
+         (.posts tumblr-client #js {:limit 5} (post-tumblrs last-post-time))))
+     ;;post from RSS
+     (when-let [feeds (some-> config :rss)]
+       (let [parser (rss.)]
+         (doseq [feed feeds]
+           (parse-feed last-post-time parser feed)))))))

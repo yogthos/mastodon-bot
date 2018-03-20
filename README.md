@@ -1,6 +1,6 @@
 ### description
 
-the bot will read the timeline from the specified Twitter/Tumblr accounts, and post it to Mastodon
+the bot will post the timeline from the specified Twitter/Tumblr accounts and RSS feeds to Mastodon
 
 ### installation
 
@@ -30,6 +30,9 @@ the bot will read the timeline from the specified Twitter/Tumblr accounts, and p
            :token "XXXX"
            :token_secret "XXXX"}
           :accounts ["cyberpunky.tumblr.com" "scipunk.tumblr.com"]}
+ ;; add RSS config to follow feeds
+ :rss {"Hacker News" "https://hnrss.org/newest"
+       "r/Clojure" "https://www.reddit.com/r/clojure/.rss"}
  :mastodon {:access_token "XXXX"
             :api_url "https://botsin.space/api/v1/"}}
 ```
