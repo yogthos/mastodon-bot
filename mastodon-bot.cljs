@@ -81,8 +81,7 @@
    :text (string/join "\n" [(string/replace caption #"<[^>]*>" "") short_url])
    :media-links (mapv #(-> % :original_size :url) photos)})
 
-(defmethod parse-tumblr-post :default [post]
-  (:type post))
+(defmethod parse-tumblr-post :default [post])
 
 (defn post-tumblrs [last-post-time]
   (fn [err response]
