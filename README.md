@@ -34,7 +34,8 @@ the bot will post the timeline from the specified Twitter/Tumblr accounts and RS
  :rss {"Hacker News" "https://hnrss.org/newest"
        "r/Clojure" "https://www.reddit.com/r/clojure/.rss"}
  :mastodon {:access_token "XXXX"
-            :api_url "https://botsin.space/api/v1/"}}
+            :api_url "https://botsin.space/api/v1/"
+            :max-post-length 300}}
 ```
 
 * the bot looks for `config.edn` at its relative path by default, an alternative location can be specified either using the `MASTODON_BOT_CONFIG` environment variable or passing the path to config as an argument

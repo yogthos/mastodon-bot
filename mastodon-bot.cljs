@@ -20,6 +20,8 @@
 
 (def config (-> (find-config) fs/readFileSync str edn/read-string))
 
+(def max-post-length (or (-> config :mastodon :max-post-length) 300))
+
 (def mastodon-client (or (some-> config :mastodon clj->js mastodon.)
                          (do
                            (js/console.error "missing Mastodon client configuration!")
@@ -27,6 +29,17 @@
 
 (defn js->edn [data]
   (js->clj data :keywordize-keys true))
+
+(defn trim-text [text]
+  (if (> (count text) max-post-length)
+    (reduce
+     (fn [text word]
+       (if (> (+ (count text) (count word)) (- max-post-length 3))
+         (reduced (str text "..."))
+         (str text " " word)))
+     ""
+     (clojure.string/split text #" "))
+    text))
 
 (defn delete-status [status]
   (.delete mastodon-client (str "statuses/" status) #js {}))
@@ -74,7 +87,7 @@
 
 (defmethod parse-tumblr-post "text" [{:keys [body date short_url]}]
   {:created-at (js/Date. date)
-   :text (str body "\n\n" short_url)})
+   :text (str (trim-text body) "\n\n" short_url)})
 
 (defmethod parse-tumblr-post "photo" [{:keys [caption date photos short_url] :as post}]
   {:created-at (js/Date. date)
@@ -101,9 +114,9 @@
   (-> (.parseURL parser url)
       (.then #(post-items
                last-post-time
-               (for [{:keys [title isoDate content link]} (-> % js->edn :items)]
-                 {:created-at (js/Date. isoDate)
-                  :text (str title "\n\n" link)})))))
+               (for [{:keys [title isoDate pubDate content link]} (-> % js->edn :items)]
+                 {:created-at (js/Date. (or isoDate pubDate))
+                  :text (str (trim-text title) "\n\n" link)})))))
 
 (get-mastodon-timeline
  (fn [timeline]
