@@ -44,3 +44,9 @@ the bot will post the timeline from the specified Twitter/Tumblr accounts and RS
 * to poll at intervals setup a cron job such as:
 
     */30 * * * * mastodon-bot.cljs /path/to/config.edn > /dev/null 2>&1
+
+## License
+
+Copyright © 2018 Dmitri Sotnikov
+
+Distributed under the [MIT License](http://opensource.org/licenses/MIT).
