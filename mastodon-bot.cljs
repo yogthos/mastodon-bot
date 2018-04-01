@@ -49,7 +49,9 @@
    (post-status status-text nil))
   ([status-text media-ids]
    (.post mastodon-client "statuses"
-          (clj->js (merge {:status status-text}
+          (clj->js (merge {:status (if-let [signature (-> config :mastodon :signature)]
+                                     (str status-text "\n" signature)
+                                     status-text)}
                           (when media-ids {:media_ids media-ids}))))))
 
 (defn post-image [image-stream description callback]
