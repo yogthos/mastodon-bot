@@ -20,6 +20,11 @@
 
 (def config (-> (find-config) fs/readFileSync str edn/read-string))
 
+(def content-filter-regexes (mapv re-pattern (-> config :mastodon :content-filters)))
+
+(defn blocked-content? [text]
+  (boolean (some #(re-matches % text) content-filter-regexes)))
+
 (def max-post-length (or (-> config :mastodon :max-post-length) 300))
 
 (def mastodon-client (or (some-> config :mastodon clj->js mastodon.)
@@ -72,7 +77,9 @@
   (.then (.get mastodon-client "timelines/home" #js {}) #(-> % .-data js->edn callback)))
 
 (defn post-items [last-post-time items]
-  (doseq [{:keys [text media-links]} (filter #(> (:created-at %) last-post-time) items)]
+  (doseq [{:keys [text media-links]} (->> items
+                                          (remove #(blocked-content? (:text %)))
+                                          (filter #(> (:created-at %) last-post-time)))]
     (if media-links
       (post-status-with-images text media-links)
       (post-status text))))
