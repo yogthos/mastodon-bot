@@ -8,6 +8,15 @@ the bot will post the timeline from the specified Twitter/Tumblr accounts and RS
 2. run `npm install` to install Node modules
 3. run `npm start` to, well, start
 
+If you wish to run the script directly, you will need to have [Lumo](https://github.com/anmonteiro/lumo) available on the shell path. Lumo can be installed globally via NPM by running:
+
+    npm install -g lumo-cljs
+
+If you get a [permission failure](https://github.com/anmonteiro/lumo/issues/206), try this:
+
+    npm install -g lumo-cljs --unsafe-perm
+
+
 ### usage
 
 * create a Mastodon API key following the instructions [here](https://tinysubversions.com/notes/mastodon-bot/)
