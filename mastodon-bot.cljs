@@ -18,7 +18,7 @@
       (-> js/process .-env .-MASTODON_BOT_CONFIG)
       "config.edn"))
 
-(def config (-> (find-config) fs/readFileSync str edn/read-string))
+(def config (-> (find-config) (fs/readFileSync #js {:encoding "UTF-8"}) edn/read-string))
 
 (def content-filter-regexes (mapv re-pattern (-> config :mastodon :content-filters)))
 
