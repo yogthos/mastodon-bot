@@ -119,13 +119,17 @@
          (map parse-tweet)
          (post-items last-post-time))))
 
+(defn strip-utm [news-link]
+  (first
+   (string/split news-link #"\?utm")))
+
 (defn parse-feed [last-post-time parser [title url]]
   (-> (.parseURL parser url)
       (.then #(post-items
                last-post-time
                (for [{:keys [title isoDate pubDate content link]} (-> % js->edn :items)]
                  {:created-at (js/Date. (or isoDate pubDate))
-                  :text (str (trim-text title) "\n\n" link)})))))
+                  :text (str (trim-text title) "\n\n" (strip-utm link))})))))
 
 (get-mastodon-timeline
  (fn [timeline]
