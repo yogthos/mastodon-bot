@@ -146,7 +146,7 @@
          (doseq [account (-> config :twitter :accounts)]
            (.get twitter-client
                  "statuses/user_timeline"
-                 #js {:screen_name account :include_rts false}
+                 #js {:screen_name account :include_rts false :exclude_replies true}
                  (post-tweets last-post-time))))
      ;;post from Tumblr
      (when-let [tumblr-oauth (some-> config :tumblr :access-keys clj->js)]
