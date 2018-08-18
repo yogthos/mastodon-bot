@@ -13,6 +13,10 @@
    ["tumblr" :as tumblr]
    ["twitter" :as twitter]))
 
+(defn exit-with-error [error]
+  (js/console.error error)
+  (js/process.exit 1))
+
 (defn find-config []
   (or (first *command-line-args*)
       (-> js/process .-env .-MASTODON_BOT_CONFIG)
@@ -21,9 +25,7 @@
 (def config (-> (find-config) (fs/readFileSync #js {:encoding "UTF-8"}) edn/read-string))
 
 (def mastodon-client (or (some-> config :mastodon clj->js mastodon.)
-                         (do
-                           (js/console.error "missing Mastodon client configuration!")
-                           (js/process.exit 1))))
+                         (exit-with-error "missing Mastodon client configuration!")))
 
 (def content-filter-regexes (mapv re-pattern (-> config :mastodon :content-filters)))
 
@@ -32,7 +34,7 @@
 (def max-post-length (-> config :mastodon :max-post-length))
 
 (defn blocked-content? [text]
- (boolean (some #(re-matches % text) content-filter-regexes)))
+ (boolean (some #(re-find % text) content-filter-regexes)))
 
 (defn js->edn [data]
   (js->clj data :keywordize-keys true))
@@ -138,20 +140,39 @@
                  {:created-at (js/Date. (or isoDate pubDate))
                   :text (str (trim-text title) "\n\n" (strip-utm link))})))))
 
+(defn twitter-client [access-keys]
+  (try
+    (twitter. (clj->js access-keys))
+    (catch js/Error e
+      (exit-with-error
+       (str "failed to connect to Twitter: " (.-message e))))))
+
+(defn tumblr-client [access-keys account]
+  (try
+    (tumblr/Blog. account (clj->js access-keys))
+    (catch js/Error e
+      (exit-with-error
+       (str "failed to connect to Tumblr account " account ": " (.-message e))))))
+
 (get-mastodon-timeline
  (fn [timeline]
    (let [last-post-time (-> timeline first :created_at (js/Date.))]
      ;;post from Twitter
-     (when-let [twitter-client (some-> config :twitter :access-keys clj->js twitter.)]
-         (doseq [account (-> config :twitter :accounts)]
-           (.get twitter-client
+     (when-let [twitter-config (:twitter config)]
+       (let [{:keys [access-keys accounts include-replies? include-rts?]} twitter-config
+             client (twitter-client access-keys)]
+         (doseq [account accounts]
+           (.get client
                  "statuses/user_timeline"
-                 #js {:screen_name account :include_rts false :exclude_replies true}
-                 (post-tweets last-post-time))))
+                 #js {:screen_name account
+                      :include_rts (boolean include-replies?)
+                      :exclude_replies (boolean include-rts?)}
+                 (post-tweets last-post-time)))))
      ;;post from Tumblr
-     (when-let [tumblr-oauth (some-> config :tumblr :access-keys clj->js)]
-       (when-let [tumblr-client (some-> config :tumblr :accounts first (tumblr/Blog. tumblr-oauth))]
-         (.posts tumblr-client #js {:limit 5} (post-tumblrs last-post-time))))
+     (when-let [{:keys [accounts limit tumblr-oauth]} (:tumblr config)]
+       (doseq [account accounts]
+         (let [client (tumblr-client access-keys account)]
+           (.posts client #js {:limit (or limit 5)} (post-tumblrs last-post-time)))))
      ;;post from RSS
      (when-let [feeds (some-> config :rss)]
        (let [parser (rss.)]

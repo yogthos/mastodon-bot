@@ -31,13 +31,20 @@ If you get a [permission failure](https://github.com/anmonteiro/lumo/issues/206)
             :consumer_secret "XXXX"
             :access_token_key "XXXX"
             :access_token_secret "XXXX"}
-           :accounts ["arstechnica" "WIRED"]} ;; accounts you wish to mirror
+           ;; optional, defaults to false
+           :include-replies? false
+           ;; optional, defaults to false
+           :include-rts? false
+           ;; accounts you wish to mirror
+           :accounts ["arstechnica" "WIRED"]}
  ;; add Tumblr config to mirror Tumblr accounts
  :tumblr {:access-keys
           {:consumer_key "XXXX"
            :consumer_secret "XXXX"
            :token "XXXX"
            :token_secret "XXXX"}
+          ;; optional limit for number of posts to retrieve, default: 5
+          :limit 10
           :accounts ["cyberpunky.tumblr.com" "scipunk.tumblr.com"]}
  ;; add RSS config to follow feeds
  :rss {"Hacker News" "https://hnrss.org/newest"
