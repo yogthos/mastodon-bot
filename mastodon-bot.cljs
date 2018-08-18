@@ -95,7 +95,7 @@
       (post-status text))))
 
 (defn parse-tweet [{created-at            :created_at
-                    text                  :text
+                    text                  :full_text
                     {:keys [media]}       :extended_entities
                     {:keys [screen_name]} :user :as tweet}]
   {:created-at (js/Date. created-at)
@@ -165,6 +165,7 @@
            (.get client
                  "statuses/user_timeline"
                  #js {:screen_name account
+                      :tweet_mode "extended"
                       :include_rts (boolean include-replies?)
                       :exclude_replies (boolean include-rts?)}
                  (post-tweets last-post-time)))))
