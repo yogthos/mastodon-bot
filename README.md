@@ -44,7 +44,11 @@ If you get a [permission failure](https://github.com/anmonteiro/lumo/issues/206)
        "r/Clojure" "https://www.reddit.com/r/clojure/.rss"}
  :mastodon {:access_token "XXXX"
             :api_url "https://botsin.space/api/v1/"
+            ;; optional limit for the post length
             :max-post-length 300
+            ;; optional flag specifying wether the name of the account
+            ;; will be appended in the post, defaults to false
+            :append-screen-name? false
             ;; optional signature for posts
             :signature "#newsbot"
             ;; optional content filter regexes

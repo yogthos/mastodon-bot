@@ -20,23 +20,30 @@
 
 (def config (-> (find-config) (fs/readFileSync #js {:encoding "UTF-8"}) edn/read-string))
 
-(def content-filter-regexes (mapv re-pattern (-> config :mastodon :content-filters)))
-
-(defn blocked-content? [text]
-  (boolean (some #(re-matches % text) content-filter-regexes)))
-
-(def max-post-length (or (-> config :mastodon :max-post-length) 300))
-
 (def mastodon-client (or (some-> config :mastodon clj->js mastodon.)
                          (do
                            (js/console.error "missing Mastodon client configuration!")
                            (js/process.exit 1))))
 
+(def content-filter-regexes (mapv re-pattern (-> config :mastodon :content-filters)))
+
+(def append-screen-name? (boolean (-> config :mastodon :append-screen-name?)))
+
+(def max-post-length (-> config :mastodon :max-post-length))
+
+(defn blocked-content? [text]
+ (boolean (some #(re-matches % text) content-filter-regexes)))
+
 (defn js->edn [data]
   (js->clj data :keywordize-keys true))
 
 (defn trim-text [text]
-  (if (> (count text) max-post-length)
+  (cond
+
+    (nil? max-post-length)
+    text
+
+    (> (count text) max-post-length)
     (reduce
      (fn [text word]
        (if (> (+ (count text) (count word)) (- max-post-length 3))
@@ -44,7 +51,8 @@
          (str text " " word)))
      ""
      (clojure.string/split text #" "))
-    text))
+
+    :else text))
 
 (defn delete-status [status]
   (.delete mastodon-client (str "statuses/" status) #js {}))
@@ -89,7 +97,7 @@
                     {:keys [media]}       :extended_entities
                     {:keys [screen_name]} :user :as tweet}]
   {:created-at (js/Date. created-at)
-   :text (str text "\n - " screen_name)
+   :text (trim-text (if append-screen-name? (str text "\n - " screen_name) text))
    :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
 
 (defmulti parse-tumblr-post :type)
@@ -120,8 +128,7 @@
          (post-items last-post-time))))
 
 (defn strip-utm [news-link]
-  (first
-   (string/split news-link #"\?utm")))
+  (first (string/split news-link #"\?utm")))
 
 (defn parse-feed [last-post-time parser [title url]]
   (-> (.parseURL parser url)
