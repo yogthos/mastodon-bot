@@ -93,7 +93,7 @@
       (post-status text))))
 
 (defn parse-tweet [{created-at            :created_at
-                    text                  :text
+                    text                  :full_text
                     {:keys [media]}       :extended_entities
                     {:keys [screen_name]} :user :as tweet}]
   {:created-at (js/Date. created-at)
@@ -146,7 +146,7 @@
          (doseq [account (-> config :twitter :accounts)]
            (.get twitter-client
                  "statuses/user_timeline"
-                 #js {:screen_name account :include_rts false :exclude_replies true}
+                 #js {:screen_name account :include_rts false :exclude_replies true :tweet_mode "extended"}
                  (post-tweets last-post-time))))
      ;;post from Tumblr
      (when-let [tumblr-oauth (some-> config :tumblr :access-keys clj->js)]
