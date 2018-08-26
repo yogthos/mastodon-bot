@@ -63,11 +63,12 @@
   ([status-text]
    (post-status status-text nil))
   ([status-text media-ids]
-   (.post mastodon-client "statuses"
-          (clj->js (merge {:status (if-let [signature (-> config :mastodon :signature)]
-                                     (str status-text "\n" signature)
-                                     status-text)}
-                          (when media-ids {:media_ids media-ids}))))))
+   (let [{:keys [sensitive signature visibility]} (:mastodon config)]
+     (.post mastodon-client "statuses"
+          (clj->js (merge {:status (if signature (str status-text "\n" signature) status-text)}
+                          (when media-ids {:media_ids media-ids})
+                          (when sensitive {:sensitive sensitive})
+                          (when visibility {:visibility visibility})))))))
 
 (defn post-image [image-stream description callback]
   (-> (.post mastodon-client "media" #js {:file image-stream :description description})
