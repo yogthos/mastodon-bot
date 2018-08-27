@@ -5,6 +5,7 @@
    [cljs.reader :as edn]
    [clojure.set :refer [rename-keys]]
    [clojure.string :as string]
+   ["child_process" :as cp]
    ["fs" :as fs]
    ["http" :as http]
    ["https" :as https]
@@ -24,14 +25,16 @@
 
 (def config (-> (find-config) (fs/readFileSync #js {:encoding "UTF-8"}) edn/read-string))
 
-(def mastodon-client (or (some-> config :mastodon clj->js mastodon.)
+(def mastodon-config (:mastodon config))
+
+(def mastodon-client (or (some-> mastodon-config clj->js mastodon.)
                          (exit-with-error "missing Mastodon client configuration!")))
 
-(def content-filter-regexes (mapv re-pattern (-> config :mastodon :content-filters)))
+(def content-filter-regexes (mapv re-pattern (:content-filters mastodon-config)))
 
-(def append-screen-name? (boolean (-> config :mastodon :append-screen-name?)))
+(def append-screen-name? (boolean (:append-screen-name? mastodon-config)))
 
-(def max-post-length (-> config :mastodon :max-post-length))
+(def max-post-length (:max-post-length mastodon-config))
 
 (defn blocked-content? [text]
  (boolean (some #(re-find % text) content-filter-regexes)))
@@ -59,13 +62,35 @@
 (defn delete-status [status]
   (.delete mastodon-client (str "statuses/" status) #js {}))
 
+(defn resolve-url [[url]]
+  (try
+    (or
+      (some-> (str (.execSync cp (str "curl -sIL " url) #js{}))
+              (->> (re-seq #"[Ll]ocation: .*"))
+              (first)
+              (string/replace #"[Ll]ocation: " ""))
+      url)
+    (catch js/Error _ url)))
+
+(def shortened-url-pattern #"(https?://)?(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,}))\.?)(?::\d{2,5})?(?:[/?#]\S*)?")
+
+(defn resolve-urls [text]
+  (if (:resolve-urls? mastodon-config)
+    (string/replace text shortened-url-pattern resolve-url)
+    text))
+
+(defn set-signature [text]
+  (if-let [signature (:signature mastodon-config )]
+    (str text "\n" signature)
+    text))
+
 (defn post-status
   ([status-text]
    (post-status status-text nil))
   ([status-text media-ids]
-   (let [{:keys [sensitive signature visibility]} (:mastodon config)]
+   (let [{:keys [sensitive signature visibility]} mastodon-config]
      (.post mastodon-client "statuses"
-          (clj->js (merge {:status (if signature (str status-text "\n" signature) status-text)}
+          (clj->js (merge {:status (-> status-text resolve-urls set-signature)}
                           (when media-ids {:media_ids media-ids})
                           (when sensitive {:sensitive sensitive})
                           (when visibility {:visibility visibility})))))))
@@ -171,7 +196,7 @@
                       :exclude_replies (boolean include-rts?)}
                  (post-tweets last-post-time)))))
      ;;post from Tumblr
-     (when-let [{:keys [accounts limit tumblr-oauth]} (:tumblr config)]
+     (when-let [{:keys [access-keys accounts limit tumblr-oauth]} (:tumblr config)]
        (doseq [account accounts]
          (let [client (tumblr-client access-keys account)]
            (.posts client #js {:limit (or limit 5)} (post-tumblrs last-post-time)))))

@@ -63,6 +63,9 @@ If you get a [permission failure](https://github.com/anmonteiro/lumo/issues/206)
             :append-screen-name? false
             ;; optional signature for posts
             :signature "#newsbot"
+            ;; optionally try to resolve URLs in posts to skip URL shorteners
+            ;; requires cURL to be installed and defaults to false
+            :resolve-urls? true
             ;; optional content filter regexes
             ;; any posts matching the regexes will be filtered out
             :content-filters [".*bannedsite.*"]}}
