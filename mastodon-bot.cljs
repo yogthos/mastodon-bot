@@ -192,8 +192,8 @@
                  "statuses/user_timeline"
                  #js {:screen_name account
                       :tweet_mode "extended"
-                      :include_rts (boolean include-replies?)
-                      :exclude_replies (boolean include-rts?)}
+                      :include_rts (boolean include-rts?)
+                      :exclude_replies (not (boolean include-replies?))}
                  (post-tweets last-post-time)))))
      ;;post from Tumblr
      (when-let [{:keys [access-keys accounts limit tumblr-oauth]} (:tumblr config)]
