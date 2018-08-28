@@ -5,10 +5,9 @@
    [cljs.reader :as edn]
    [clojure.set :refer [rename-keys]]
    [clojure.string :as string]
-   ["child_process" :as cp]
+   ["deasync" :as deasync]
+   ["request" :as request]
    ["fs" :as fs]
-   ["http" :as http]
-   ["https" :as https]
    ["mastodon-api" :as mastodon]
    ["rss-parser" :as rss]
    ["tumblr" :as tumblr]
@@ -62,15 +61,18 @@
 (defn delete-status [status]
   (.delete mastodon-client (str "statuses/" status) #js {}))
 
-(defn resolve-url [[url]]
+(defn resolve-url [[uri]]
   (try
     (or
-      (some-> (str (.execSync cp (str "curl -sIL " url) #js{}))
-              (->> (re-seq #"[Ll]ocation: .*"))
-              (first)
-              (string/replace #"[Ll]ocation: " ""))
-      url)
-    (catch js/Error _ url)))
+      (some-> ((deasync request)
+               #js {:method "GET"
+                    :uri (if (string/starts-with? uri "https://") uri (str "https://" uri))
+                    :followRedirect false})
+              (.-headers)
+              (.-location)
+              (string/replace "?mbid=social_twitter" ""))
+      uri)
+    (catch js/Error _ uri)))
 
 (def shortened-url-pattern #"(https?://)?(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,}))\.?)(?::\d{2,5})?(?:[/?#]\S*)?")
 
@@ -104,9 +106,11 @@
    (post-status-with-images status-text urls []))
   ([status-text [url & urls] ids]
    (if url
-     (.get (if (string/starts-with? url "https://") https http) url
+     (-> request
+         (.get url)
+         (.on "response"
            (fn [image-stream]
-             (post-image image-stream status-text #(post-status-with-images status-text urls (conj ids %)))))
+             (post-image image-stream status-text #(post-status-with-images status-text urls (conj ids %))))))
      (post-status status-text (not-empty ids)))))
 
 (defn get-mastodon-timeline [callback]
