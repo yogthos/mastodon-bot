@@ -31,12 +31,17 @@
 
 (def content-filter-regexes (mapv re-pattern (:content-filters mastodon-config)))
 
+(def keyword-filter-regexes (mapv re-pattern (:keyword-filters mastodon-config)))
+
 (def append-screen-name? (boolean (:append-screen-name? mastodon-config)))
 
 (def max-post-length (:max-post-length mastodon-config))
 
 (defn blocked-content? [text]
- (boolean (some #(re-find % text) content-filter-regexes)))
+ (boolean
+   (or (some #(re-find % text) content-filter-regexes)
+       (when (not-empty keyword-filter-regexes)
+             (empty? (some #(re-find % text) keyword-filter-regexes))))))
 
 (defn js->edn [data]
   (js->clj data :keywordize-keys true))

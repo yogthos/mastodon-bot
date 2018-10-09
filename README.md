@@ -68,7 +68,10 @@ If you get a [permission failure](https://github.com/anmonteiro/lumo/issues/206)
             :resolve-urls? true
             ;; optional content filter regexes
             ;; any posts matching the regexes will be filtered out
-            :content-filters [".*bannedsite.*"]}}
+            :content-filters [".*bannedsite.*"]
+            ;; optional keyword filter regexes
+            ;; any posts not matching the regexes will be filtered out
+            :keyword-filters [".*clojure.*"]}}
 ```
 
 * the bot looks for `config.edn` at its relative path by default, an alternative location can be specified either using the `MASTODON_BOT_CONFIG` environment variable or passing the path to config as an argument
