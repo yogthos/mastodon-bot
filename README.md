@@ -24,6 +24,9 @@ If you get a [permission failure](https://github.com/anmonteiro/lumo/issues/206)
 * create a Tumblr API key following the instructions [here](http://www.developerdrive.com/2014/05/how-to-get-started-with-the-tumblr-api-part-1/)
 * create a file called `config.edn` with the following contents:
 
+**NOTE**: the bot checks the specified Mastodon account to see the timestamp of the last post, and only posts content
+with later timestamps to avoid duplicate posts. On the first run the timestamp will default to current time.
+
 ```clojure
 {;; add Twitter config to mirror Twitter accounts
  :twitter {:access-keys
@@ -52,9 +55,12 @@ If you get a [permission failure](https://github.com/anmonteiro/lumo/issues/206)
  :mastodon {:access_token "XXXX"
             :api_url "https://botsin.space/api/v1/"
             ;; optional boolean to mark content as sensitive
-            :sensitive true
+            :sensitive? true
+            ;; optional boolean defaults to false
+            ;; only sources containing media will be posted when set to true
+            :media-only? true
             ;; optional visibility flag: direct, private, unlisted, public
-            ;; defaults to public
+            ;; defaults to public        
             :visibility "unlisted"
             ;; optional limit for the post length
             :max-post-length 300

@@ -95,11 +95,11 @@
   ([status-text]
    (post-status status-text nil))
   ([status-text media-ids]
-   (let [{:keys [sensitive signature visibility]} mastodon-config]
+   (let [{:keys [sensitive? signature visibility]} mastodon-config]
      (.post mastodon-client "statuses"
           (clj->js (merge {:status (-> status-text resolve-urls set-signature)}
                           (when media-ids {:media_ids media-ids})
-                          (when sensitive {:sensitive sensitive})
+                          (when sensitive? {:sensitive sensitive?})
                           (when visibility {:visibility visibility})))))))
 
 (defn post-image [image-stream description callback]
@@ -127,7 +127,8 @@
                                           (filter #(> (:created-at %) last-post-time)))]
     (if media-links
       (post-status-with-images text media-links)
-      (post-status text))))
+      (when-not (:media-only? mastodon-config)
+        (post-status text)))))
 
 (defn parse-tweet [{created-at            :created_at
                     text                  :full_text
