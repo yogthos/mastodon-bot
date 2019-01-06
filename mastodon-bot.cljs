@@ -119,7 +119,11 @@
      (post-status status-text (not-empty ids)))))
 
 (defn get-mastodon-timeline [callback]
-  (.then (.get mastodon-client "timelines/home" #js {}) #(-> % .-data js->edn callback)))
+  (.then (.get mastodon-client "timelines/home" #js {})
+         #(let [response (-> % .-data js->edn)]
+            (if-let [error (:error response)]
+              (exit-with-error error)
+              (callback response)))))
 
 (defn post-items [last-post-time items]
   (doseq [{:keys [text media-links]} (->> items
