@@ -53,6 +53,7 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
  :rss {"Hacker News" "https://hnrss.org/newest"
        "r/Clojure" "https://www.reddit.com/r/clojure/.rss"}
  :mastodon {:access_token "XXXX"
+            :acccount-id "XXXX"
             :api_url "https://botsin.space/api/v1/"
             ;; optional boolean to mark content as sensitive
             :sensitive? true
