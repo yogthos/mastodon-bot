@@ -119,7 +119,7 @@
      (post-status status-text (not-empty ids)))))
 
 (defn get-mastodon-timeline [callback]
-  (.then (.get mastodon-client (string/join "" ["accounts/" (:account-id mastodon-config) "/statuses"]) #js {})
+  (.then (.get mastodon-client (str "accounts/" (:account-id mastodon-config)"/statuses") #js {})
          #(let [response (-> % .-data js->edn)]
             (if-let [error (:error response)]
               (exit-with-error error)
