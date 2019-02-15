@@ -55,7 +55,7 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
  :mastodon {:access_token "XXXX"
             ;; account number you see when you log in and go to your profile
             ;; e.g: https://mastodon.social/web/accounts/294795
-            :acccount-id "XXXX"
+            :account-id "XXXX"
             :api_url "https://botsin.space/api/v1/"
             ;; optional boolean to mark content as sensitive
             :sensitive? true
