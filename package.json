@@ -4,12 +4,12 @@
   "repository": "https://github.com/yogthos/mastodon-bot",
   "license": "MIT",
   "dependencies": {
-    "lumo-cljs": "^1.8.0",
+    "lumo-cljs": "^1.10.1",
     "mastodon-api": "1.3.0",
-    "rss-parser": "3.1.2",
+    "rss-parser": "3.7.1",
     "tumblr": "0.4.1",
     "twitter": "1.7.1",
-    "deasync": "0.1.13",
+    "deasync": "0.1.15",
     "request": "2.88.0"
   },
   "scripts": {
