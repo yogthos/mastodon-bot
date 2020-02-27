@@ -13,6 +13,7 @@
     "request": "2.88.0"
   },
   "scripts": {
-    "start": "./mastodon-bot.cljs"
+    "start": "./mastodon_bot/main.cljs",
+    "test": "MASTODON_BOT_CONFIG=test.edn ./mastodon_bot/core_test.cljs"
   }
 }
