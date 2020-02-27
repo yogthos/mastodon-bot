@@ -8,6 +8,7 @@
    ["request" :as request]
    ["fs" :as fs]
    ["mastodon-api" :as mastodon]
+   ["rss-parser" :as rss]
    ["tumblr" :as tumblr]
    ["twitter" :as twitter]))
 
@@ -16,9 +17,12 @@
   (js/process.exit 1))
 
 (defn find-config []
-  (or (first *command-line-args*)
-      (-> js/process .-env .-MASTODON_BOT_CONFIG)
-      "config.edn"))
+  (let [config (or (first *command-line-args*)
+                   (-> js/process .-env .-MASTODON_BOT_CONFIG)
+                   "config.edn")]
+    (if (fs/existsSync config)
+      config
+      (exit-with-error (str "failed to read config: " config)))))
 
 (def config (-> (find-config) (fs/readFileSync #js {:encoding "UTF-8"}) edn/read-string))
 
@@ -193,3 +197,6 @@
     (catch js/Error e
       (exit-with-error
        (str "failed to connect to Tumblr account " account ": " (.-message e))))))
+
+(defn rss-parser []
+  (rss.))

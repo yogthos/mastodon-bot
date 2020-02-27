@@ -2,8 +2,7 @@
 
 (ns mastodon-bot.main
   (:require
-   [mastodon-bot.core :as core]
-   ["rss-parser" :as rss]))
+   [mastodon-bot.core :as core]))
 
 (core/get-mastodon-timeline
  (fn [timeline]
@@ -27,6 +26,6 @@
            (.posts client #js {:limit (or limit 5)} (core/post-tumblrs last-post-time)))))
      ;;post from RSS
      (when-let [feeds (some-> core/config :rss)]
-       (let [parser (rss.)]
+       (let [parser (core/rss-parser)]
          (doseq [feed feeds]
            (core/parse-feed last-post-time parser feed)))))))

@@ -6,7 +6,6 @@ the bot will post the timeline from the specified Twitter/Tumblr accounts and RS
 
 1. install [Node.js](https://nodejs.org/en/)
 2. run `npm install` to install Node modules
-3. run `npm start` to, well, start
 
 If you wish to run the script directly, you will need to have [Lumo](https://github.com/anmonteiro/lumo) available on the shell path. Lumo can be installed globally via NPM by running:
 
@@ -87,10 +86,10 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
 
 * the bot looks for `config.edn` at its relative path by default, an alternative location can be specified either using the `MASTODON_BOT_CONFIG` environment variable or passing the path to config as an argument
 
-* run the bot: `./mastodon-bot.cljs`
+* run the bot: `npm start`
 * to poll at intervals setup a cron job such as:
 
-    */30 * * * * mastodon-bot.cljs /path/to/config.edn > /dev/null 2>&1
+    */30 * * * * npm start /path/to/config.edn > /dev/null 2>&1
 
 ## License
 
