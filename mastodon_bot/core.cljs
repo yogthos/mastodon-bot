@@ -198,5 +198,29 @@
       (exit-with-error
        (str "failed to connect to Tumblr account " account ": " (.-message e))))))
 
-(defn rss-parser []
-  (rss.))
+(defn main []
+  (get-mastodon-timeline
+   (fn [timeline]
+     (let [last-post-time (-> timeline first :created_at (js/Date.))]
+     ;;post from Twitter
+       (when-let [twitter-config (:twitter config)]
+         (let [{:keys [access-keys accounts include-replies? include-rts?]} twitter-config
+               client (twitter-client access-keys)]
+           (doseq [account accounts]
+             (.get client
+                   "statuses/user_timeline"
+                   #js {:screen_name account
+                        :tweet_mode "extended"
+                        :include_rts (boolean include-rts?)
+                        :exclude_replies (not (boolean include-replies?))}
+                   (post-tweets last-post-time)))))
+     ;;post from Tumblr
+       (when-let [{:keys [access-keys accounts limit]} (:tumblr config)]
+         (doseq [account accounts]
+           (let [client (tumblr-client access-keys account)]
+             (.posts client #js {:limit (or limit 5)} (post-tumblrs last-post-time)))))
+     ;;post from RSS
+       (when-let [feeds (some-> config :rss)]
+         (let [parser (rss.)]
+           (doseq [feed feeds]
+             (parse-feed last-post-time parser feed))))))))

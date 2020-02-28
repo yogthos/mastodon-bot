@@ -12,6 +12,9 @@
     "deasync": "0.1.15",
     "request": "2.88.0"
   },
+  "devDependencies": {
+    "shadow-cljs": "^2.8.37"
+  },
   "scripts": {
     "start": "./mastodon_bot/main.cljs",
     "test": "MASTODON_BOT_CONFIG=test.edn ./mastodon_bot/core_test.cljs"
