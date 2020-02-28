@@ -91,6 +91,14 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
 
     */30 * * * * npm start /path/to/config.edn > /dev/null 2>&1
 
+### compiling to Js
+
+Alternatively, the bot can be compiled directly to JavaScript using the following command:
+
+```
+npx shadow-cljs release app
+```
+
 ## License
 
 Copyright © 2018 Dmitri Sotnikov

@@ -1,5 +1,6 @@
 {:source-paths ["mastodon_bot"]
  :dependencies []
- :builds       {:app {:target    :node-script                      
+ :builds       {:app {:target    :node-script
                       :output-to "target/mastodon-bot.js"
-                      :main      mastodon-bot.core/main}}}
+                      :main      mastodon-bot.core/main
+                      :compiler-options {:optimizations :simple}}}}
