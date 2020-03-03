@@ -61,7 +61,7 @@
          (reduced (str text "..."))
          (str text " " word)))
      ""
-     (clojure.string/split text #" "))
+     (string/split text #" "))
 
     :else text))
 
@@ -144,7 +144,7 @@
 ; If the text ends in a link to the media (which is uploaded anyway),
 ; chop it off instead of including the link in the toot
 (defn chop-tail-media-url [text media]
-  (clojure.string/replace text #" (\S+)$" #(if (in (%1 1) (map :url media)) "" (%1 0))))
+  (string/replace text #" (\S+)$" #(if (in (%1 1) (map :url media)) "" (%1 0))))
 
 (defn parse-tweet [{created-at            :created_at
                     text                  :full_text
