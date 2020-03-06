@@ -61,7 +61,7 @@
          (reduced (str text "..."))
          (str text " " word)))
      ""
-     (clojure.string/split text #" "))
+     (string/split text #" "))
 
     :else text))
 
@@ -138,12 +138,20 @@
       (when-not (:media-only? mastodon-config)
         (post-status text)))))
 
+(defn in [needle haystack]
+  (some (partial = needle) haystack))
+
+; If the text ends in a link to the media (which is uploaded anyway),
+; chop it off instead of including the link in the toot
+(defn chop-tail-media-url [text media]
+  (string/replace text #" (\S+)$" #(if (in (%1 1) (map :url media)) "" (%1 0))))
+
 (defn parse-tweet [{created-at            :created_at
                     text                  :full_text
                     {:keys [media]}       :extended_entities
                     {:keys [screen_name]} :user :as tweet}]
   {:created-at (js/Date. created-at)
-   :text (trim-text (if append-screen-name? (str text "\n - " screen_name) text))
+   :text (trim-text (str (chop-tail-media-url text media) (if append-screen-name? ("\n - " screen_name) "")))
    :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
 
 (defmulti parse-tumblr-post :type)
