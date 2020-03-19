@@ -27,3 +27,6 @@
          )))
 
 (cljs.test/run-tests)
+
+; Don't run core's -main when testing
+(set! *main-cli-fn* ())

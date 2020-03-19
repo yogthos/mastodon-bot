@@ -1,3 +1,5 @@
+#!/usr/bin/env lumo
+
 (ns mastodon-bot.core
   (:require
    [cljs.core :refer [*command-line-args*]]
@@ -206,7 +208,7 @@
       (exit-with-error
        (str "failed to connect to Tumblr account " account ": " (.-message e))))))
 
-(defn main []
+(defn -main []
   (get-mastodon-timeline
    (fn [timeline]
      (let [last-post-time (-> timeline first :created_at (js/Date.))]
@@ -232,3 +234,5 @@
          (let [parser (rss.)]
            (doseq [feed feeds]
              (parse-feed last-post-time parser feed))))))))
+
+(set! *main-cli-fn* -main)
