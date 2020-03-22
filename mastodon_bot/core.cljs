@@ -179,11 +179,11 @@
 
 (defn post-tweets [last-post-time]
   (fn [error tweets response]
-    (if (nil? error)
+    (if error
+      (exit-with-error error)
       (->> (js->edn tweets)
            (map parse-tweet)
-           (post-items last-post-time))
-      (exit-with-error error))))
+           (post-items last-post-time)))))
 
 (defn strip-utm [news-link]
   (first (string/split news-link #"\?utm")))
