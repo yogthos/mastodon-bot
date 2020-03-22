@@ -136,14 +136,16 @@
   )
 
 (defn post-items [last-post-time items]
-  (doseq [{:keys [text media-links]} (->> items
-                                          (remove #(blocked-content? (:text %)))
-                                          (filter #(> (:created-at %) last-post-time))
-                                          (map perform-replacements))]
+  (let [filtered-items (->> items
+                            (remove #(blocked-content? (:text %)))
+                            (filter #(> (:created-at %) last-post-time))
+                            (map perform-replacements))]
+  (print (str "Posting " (count filtered-items) " items (of " (count items) " found)\n"))
+  (doseq [{:keys [text media-links]} filtered-items]
     (if media-links
       (post-status-with-images text media-links)
       (when-not (:media-only? mastodon-config)
-        (post-status text)))))
+        (post-status text))))))
 
 (defn in [needle haystack]
   (some (partial = needle) haystack))
@@ -219,6 +221,7 @@
   (get-mastodon-timeline
    (fn [timeline]
      (let [last-post-time (-> timeline first :created_at (js/Date.))]
+       (print (str "Looking for posts after [" last-post-time "]\n"))
      ;;post from Twitter
        (when-let [twitter-config (:twitter config)]
          (let [{:keys [access-keys accounts include-replies? include-rts?]} twitter-config
