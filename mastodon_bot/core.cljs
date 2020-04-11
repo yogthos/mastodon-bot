@@ -131,10 +131,15 @@
               (exit-with-error error)
               (callback response)))))
 
+(defn perform-replacements [post]
+  (assoc post :text (reduce-kv string/replace (:text post) (:replacements mastodon-config)))
+  )
+
 (defn post-items [last-post-time items]
   (doseq [{:keys [text media-links]} (->> items
                                           (remove #(blocked-content? (:text %)))
-                                          (filter #(> (:created-at %) last-post-time)))]
+                                          (filter #(> (:created-at %) last-post-time))
+                                          (map perform-replacements))]
     (if media-links
       (post-status-with-images text media-links)
       (when-not (:media-only? mastodon-config)

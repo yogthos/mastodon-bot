@@ -26,6 +26,12 @@
          (:text (core/parse-tweet (readfile "testdata/twitter/normal-tweet.edn")))
          )))
 
+(deftest test-replacements
+  (is (=
+         "💠 Check out what has been going on during March in the world of @ReproBuilds! 💠 https://t.co/k6NsSO115z @opensuse@fosstodon.org @conservancy@mastodon.technology @PrototypeFund@mastodon.social @debian@fosstodon.org "
+         (:text (core/perform-replacements (core/parse-tweet (readfile "testdata/twitter/tweet-mentions.edn"))))
+         )))
+
 (cljs.test/run-tests)
 
 ; Don't run core's -main when testing
