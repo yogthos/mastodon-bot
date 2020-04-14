@@ -15,6 +15,12 @@
   "devDependencies": {
     "shadow-cljs": "^2.8.37"
   },
+  "directories": {
+    "lib": "."
+  },
+  "files": [
+    "mastodon_bot/*"
+  ],
   "scripts": {
     "start": "./mastodon_bot/core.cljs",
     "test": "MASTODON_BOT_CONFIG=test.edn ./mastodon_bot/core_test.cljs"
