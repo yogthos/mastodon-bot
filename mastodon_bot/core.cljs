@@ -92,6 +92,9 @@
     (:nitter-urls? mastodon-config)
     (string/replace #"https://twitter.com" "https://nitter.net")))
 
+(defn perform-replacements [text]
+  (reduce-kv string/replace text (:replacements mastodon-config)))
+
 (defn set-signature [text]
   (if-let [signature (:signature mastodon-config )]
     (str text "\n" signature)
@@ -103,7 +106,7 @@
   ([status-text media-ids]
    (let [{:keys [sensitive? signature visibility]} mastodon-config]
      (.post mastodon-client "statuses"
-          (clj->js (merge {:status (-> status-text resolve-urls set-signature)}
+          (clj->js (merge {:status (-> status-text resolve-urls perform-replacements set-signature)}
                           (when media-ids {:media_ids media-ids})
                           (when sensitive? {:sensitive sensitive?})
                           (when visibility {:visibility visibility})))))))
@@ -131,15 +134,10 @@
               (exit-with-error error)
               (callback response)))))
 
-(defn perform-replacements [post]
-  (assoc post :text (reduce-kv string/replace (:text post) (:replacements mastodon-config)))
-  )
-
 (defn post-items [last-post-time items]
   (doseq [{:keys [text media-links]} (->> items
                                           (remove #(blocked-content? (:text %)))
-                                          (filter #(> (:created-at %) last-post-time))
-                                          (map perform-replacements))]
+                                          (filter #(> (:created-at %) last-post-time)))]
     (if media-links
       (post-status-with-images text media-links)
       (when-not (:media-only? mastodon-config)
