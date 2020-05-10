@@ -156,7 +156,7 @@
                     {:keys [media]}       :extended_entities
                     {:keys [screen_name]} :user :as tweet}]
   {:created-at (js/Date. created-at)
-   :text (trim-text (str (chop-tail-media-url text media) (if append-screen-name? ("\n - " screen_name) "")))
+   :text (trim-text (str (chop-tail-media-url text media) (if append-screen-name? (str "\n - " screen_name) "")))
    :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
 
 (defmulti parse-tumblr-post :type)
