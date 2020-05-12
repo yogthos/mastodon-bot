@@ -1,3 +1,5 @@
+.shadow-cljs
 config.edn
 package-lock.json
 /node_modules
+target/mastodon-bot.js
