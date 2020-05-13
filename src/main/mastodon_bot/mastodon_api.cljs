@@ -24,7 +24,7 @@
 (s/def ::replacements string?)
 (s/def ::max-post-length (fn [n] (and
                                  (int? n)
-                                 (<= n 600)
+                                 (<= n 500)
                                  (> n 0))))
 
 (s/def ::content-filters (s/* ::content-filter))
@@ -108,17 +108,23 @@
 
 (defn post-status
   ([mastodon-config status-text]
-   (post-status mastodon-config status-text nil))
+   (post-status mastodon-config status-text nil print))
   ([mastodon-config status-text media-ids]
+   (post-status mastodon-config status-text media-ids print))
+  ([mastodon-config status-text media-ids callback]
    (let [{:keys [sensitive? signature visibility]} mastodon-config]
-     (.post (mastodon-client mastodon-config) "statuses"
-          (clj->js (merge {:status (-> status-text
-                                       (partial resolve-urls mastodon-config)
-                                       (partial perform-replacements mastodon-config)
-                                       (partial set-signature mastodon-config))}
-                          (when media-ids {:media_ids media-ids})
-                          (when sensitive? {:sensitive sensitive?})
-                          (when visibility {:visibility visibility})))))))
+     (println sensitive?)
+     (println signature)
+     (println visibility)
+     (-> (.post (mastodon-client mastodon-config) "statuses"
+                (clj->js (merge {:status (-> status-text
+                                             (partial resolve-urls mastodon-config)
+                                             (partial perform-replacements mastodon-config)
+                                             (partial set-signature mastodon-config))}
+                                (when media-ids {:media_ids media-ids})
+                                (when sensitive? {:sensitive sensitive?})
+                                (when visibility {:visibility visibility}))))
+         (.then #(-> % callback))))))
 
 (defn-spec post-image any?
   [mastodon-config mastodon-config?
