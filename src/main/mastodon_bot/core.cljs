@@ -22,11 +22,10 @@
 
 (def config? (s/keys :req [::mastodon-config]
                      :opt [::twitter ::tumblr ::rss]))
-(s/def ::config config?)
 
 ;this has to stay on top - only ns-keywords can be uses in spec
 (defn-spec mastodon-config ::mastodon-config
-  [config ::config]
+  [config config?]
   (::mastodon-config config))
 
 (defn find-config []
