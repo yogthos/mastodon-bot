@@ -1,11 +1,11 @@
 {:source-paths ["src/main"
                 "src/test"]
  :dependencies [[orchestra "2018.12.06-2"]]
- :builds       {:dev {:target       :node-script
-                      :repl-init-ns mastodon-bot.core
-                      :output-to    "target/mastodon-bot.js"
-                      :main         mastodon-bot.core/dummy
-                      :repl-pprint  true}
+ :builds       {:dev {:target       :node-library
+                      :output-to    "target/lib-mastodon-bot.js"
+                      :exports   {:infra mastodon-bot.infra/js->edn}
+                      :repl-pprint  true
+                      }
                 :app {:target    :node-script
                       :output-to "target/mastodon-bot.js"
                       :main      mastodon-bot.core/main

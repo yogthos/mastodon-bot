@@ -15,9 +15,12 @@
    [mastodon-bot.infra :as infra]
    [mastodon-bot.mastodon-api :as masto]))
 
-(defn dummy [])
-
 (s/def ::mastodon-config masto/mastodon-config?)
+(s/def ::twitter map?)
+(s/def ::tumblr map?)
+(s/def ::rss map?)
+(def config? (s/keys :req [::mastodon-config]
+                     :opt [::twitter ::tumblr ::rss]))
 
 ;this has to stay on top - only ns-keywords can be uses in spec
 (defn-spec mastodon-config ::mastodon-config
@@ -135,7 +138,7 @@
    (fn [timeline]
      (let [last-post-time (-> timeline first :created_at (js/Date.))]
      ;;post from Twitter
-       (when-let [twitter-config (:twitter config)]
+       (when-let [twitter-config (::twitter config)]
          (let [{:keys [access-keys accounts include-replies? include-rts?]} twitter-config
                client (twitter-client access-keys)]
            (doseq [account accounts]

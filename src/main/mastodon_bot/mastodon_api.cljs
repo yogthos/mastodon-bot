@@ -28,7 +28,7 @@
 
 (s/def ::content-filters (s/* ::content-filter))
 (s/def ::keyword-filters (s/* ::keyword-filter))
-(s/def ::mastodon-js-config (s/keys :req [::access_token ::a:pi_url]))
+(s/def ::mastodon-js-config (s/keys :req [::access_token ::api_url]))
 (s/def ::mastodon-clj-config (s/keys :req [::account-id ::content-filters ::keyword-filters 
                                            ::max-post-length ::signature ::visibility 
                                            ::append-screen-name? ::sensitive? ::resolve-urls? 
