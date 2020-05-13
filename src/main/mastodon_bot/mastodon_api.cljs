@@ -114,10 +114,10 @@
   ([mastodon-config status-text media-ids callback]
    (let [{:mastodon-bot.mastodon-api/keys [sensitive? signature visibility]} mastodon-config]
      (-> (.post (mastodon-client mastodon-config) "statuses"
-                (clj->js (merge {:status (-> status-text
-                                             (partial resolve-urls mastodon-config)
-                                             (partial perform-replacements mastodon-config)
-                                             (partial set-signature mastodon-config))}
+                (clj->js (merge {:status (->> status-text
+                                             (resolve-urls mastodon-config)
+                                             (perform-replacements mastodon-config)
+                                             (set-signature mastodon-config))}
                                 (when media-ids {:media_ids media-ids})
                                 (when sensitive? {:sensitive sensitive?})
                                 (when visibility {:visibility visibility}))))
