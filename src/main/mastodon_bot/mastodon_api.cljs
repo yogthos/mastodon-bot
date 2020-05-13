@@ -24,7 +24,7 @@
 (s/def ::max-post-length (fn [n] (and
                                  (int? n)
                                  (<= n 600)
-                                 (< n 0))))
+                                 (> n 0))))
 
 (s/def ::content-filters (s/* ::content-filter))
 (s/def ::keyword-filters (s/* ::keyword-filter))

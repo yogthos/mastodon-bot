@@ -19,12 +19,14 @@
 (s/def ::twitter map?)
 (s/def ::tumblr map?)
 (s/def ::rss map?)
+
 (def config? (s/keys :req [::mastodon-config]
                      :opt [::twitter ::tumblr ::rss]))
+(s/def ::config config?)
 
 ;this has to stay on top - only ns-keywords can be uses in spec
 (defn-spec mastodon-config ::mastodon-config
-  [config any?]
+  [config ::config]
   (::mastodon-config config))
 
 (defn find-config []
@@ -161,3 +163,4 @@
              (parse-feed last-post-time parser feed))))))))
 
 (set! *main-cli-fn* -main)
+(st/instrument 'mastodon-config)
