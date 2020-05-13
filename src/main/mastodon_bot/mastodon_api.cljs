@@ -112,10 +112,7 @@
   ([mastodon-config status-text media-ids]
    (post-status mastodon-config status-text media-ids print))
   ([mastodon-config status-text media-ids callback]
-   (let [{:keys [sensitive? signature visibility]} mastodon-config]
-     (println sensitive?)
-     (println signature)
-     (println visibility)
+   (let [{:mastodon-bot.mastodon-api/keys [sensitive? signature visibility]} mastodon-config]
      (-> (.post (mastodon-client mastodon-config) "statuses"
                 (clj->js (merge {:status (-> status-text
                                              (partial resolve-urls mastodon-config)
@@ -162,7 +159,7 @@
   [mastodon-config mastodon-config?
    last-post-time any?
    items any?]
-  (doseq [{:keys [text media-links]} 
+  (doseq [{:mastodon-bot.mastodon-api/keys [text media-links]} 
           (->> items
                (remove #((blocked-content? mastodon-config (:text %))))
                (filter #(> (:created-at %) last-post-time)))]
