@@ -21,6 +21,7 @@
 (s/def ::resolve-urls? boolean?)
 (s/def ::nitter-urls? boolean?)
 (s/def ::visibility string?)
+(s/def ::replacements string?)
 (s/def ::max-post-length (fn [n] (and
                                  (int? n)
                                  (<= n 600)
@@ -32,7 +33,7 @@
 (s/def ::mastodon-clj-config (s/keys :req [::account-id ::content-filters ::keyword-filters 
                                            ::max-post-length ::signature ::visibility 
                                            ::append-screen-name? ::sensitive? ::resolve-urls? 
-                                           ::nitter-urls?]))
+                                           ::nitter-urls? ::replacements]))
 (def mastodon-config? (s/merge ::mastodon-js-config ::mastodon-clj-config))
 
 (defn-spec content-filter-regexes ::content-filters
@@ -50,6 +51,11 @@
 (defn-spec max-post-length ::max-post-length
   [mastodon-config mastodon-config?]
   (::max-post-length mastodon-config))
+
+(defn-spec perform-replacements string?
+  [mastodon-config mastodon-config?
+   text string?]
+  (reduce-kv string/replace text (::replacements mastodon-config)))
 
 (defn-spec mastodon-client any?
   [mastodon-config mastodon-config?]
@@ -106,8 +112,10 @@
   ([mastodon-config status-text media-ids]
    (let [{:keys [sensitive? signature visibility]} mastodon-config]
      (.post (mastodon-client mastodon-config) "statuses"
-          (clj->js (merge {:status (resolve-urls mastodon-config
-                                                 (set-signature mastodon-config status-text))}
+          (clj->js (merge {:status (-> status-text
+                                       (partial resolve-urls mastodon-config)
+                                       (partial perform-replacements mastodon-config)
+                                       (partial set-signature mastodon-config))}
                           (when media-ids {:media_ids media-ids})
                           (when sensitive? {:sensitive sensitive?})
                           (when visibility {:visibility visibility})))))))
@@ -144,12 +152,6 @@
               (infra/exit-with-error error)
               (callback response)))))
 
-(defn-spec perform-replacements any?
-  [mastodon-config mastodon-config?
-   post any?]
-  (assoc post :text (reduce-kv string/replace (:text post) (::replacements mastodon-config)))
-  )
-
 (defn-spec post-items any?
   [mastodon-config mastodon-config?
    last-post-time any?
@@ -157,8 +159,7 @@
   (doseq [{:keys [text media-links]} 
           (->> items
                (remove #((blocked-content? mastodon-config (:text %))))
-               (filter #(> (:created-at %) last-post-time))
-               (map #(perform-replacements mastodon-config %)))]
+               (filter #(> (:created-at %) last-post-time)))]
     (if media-links
       (post-status-with-images mastodon-config text media-links)
       (when-not (::media-only? mastodon-config)

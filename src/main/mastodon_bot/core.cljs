@@ -72,7 +72,7 @@
   {:created-at (js/Date. created-at)
    :text (trim-text (str (chop-tail-media-url text media) 
                          (if (masto/append-screen-name? (mastodon-config config)) 
-                           ("\n - " screen_name) "")))
+                           (str "\n - " screen_name) "")))
    :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
 
 (defmulti parse-tumblr-post :type)
