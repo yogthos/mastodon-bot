@@ -29,33 +29,33 @@
 
 (s/def ::content-filters (s/* ::content-filter))
 (s/def ::keyword-filters (s/* ::keyword-filter))
-(s/def ::mastodon-js-config (s/keys :req [::access_token ::api_url]))
-(s/def ::mastodon-clj-config (s/keys :req [::account-id ::content-filters ::keyword-filters 
-                                           ::max-post-length ::signature ::visibility 
-                                           ::append-screen-name? ::sensitive? ::resolve-urls? 
-                                           ::nitter-urls? ::replacements]))
+(s/def ::mastodon-js-config (s/keys :req-un [::access_token ::api_url]))
+(s/def ::mastodon-clj-config (s/keys :req-un [::account-id ::content-filters ::keyword-filters
+                                              ::max-post-length ::signature ::visibility
+                                              ::append-screen-name? ::sensitive? ::resolve-urls?
+                                              ::nitter-urls? ::replacements]))
 (def mastodon-config? (s/merge ::mastodon-js-config ::mastodon-clj-config))
 
 (defn-spec content-filter-regexes ::content-filters
   [mastodon-config mastodon-config?]
-  (mapv re-pattern (::content-filters mastodon-config)))
+  (mapv re-pattern (:content-filters mastodon-config)))
 
 (defn-spec keyword-filter-regexes ::keyword-filters
   [mastodon-config mastodon-config?]
-  (mapv re-pattern (::keyword-filters mastodon-config)))
+  (mapv re-pattern (:keyword-filters mastodon-config)))
 
 (defn-spec append-screen-name? ::append-screen-name?
   [mastodon-config mastodon-config?]
-  (boolean (::append-screen-name? mastodon-config)))
+  (boolean (:append-screen-name? mastodon-config)))
 
 (defn-spec max-post-length ::max-post-length
   [mastodon-config mastodon-config?]
-  (::max-post-length mastodon-config))
+  (:max-post-length mastodon-config))
 
 (defn-spec perform-replacements string?
   [mastodon-config mastodon-config?
    text string?]
-  (reduce-kv string/replace text (::replacements mastodon-config)))
+  (reduce-kv string/replace text (:replacements mastodon-config)))
 
 (defn-spec mastodon-client any?
   [mastodon-config mastodon-config?]
@@ -94,15 +94,15 @@
   [mastodon-config mastodon-config?
    text string?]
   (cond-> text
-    (::resolve-urls? mastodon-config)
+    (:resolve-urls? mastodon-config)
     (string/replace shortened-url-pattern resolve-url)
-    (::nitter-urls? mastodon-config)
+    (:nitter-urls? mastodon-config)
     (string/replace #"https://twitter.com" "https://nitter.net")))
 
 (defn-spec set-signature string?
   [mastodon-config mastodon-config?
    text string?]
-  (if-let [signature (::signature mastodon-config )]
+  (if-let [signature (:signature mastodon-config )]
     (str text "\n" signature)
     text))
 
@@ -112,7 +112,7 @@
   ([mastodon-config status-text media-ids]
    (post-status mastodon-config status-text media-ids print))
   ([mastodon-config status-text media-ids callback]
-   (let [{:mastodon-bot.mastodon-api/keys [sensitive? signature visibility]} mastodon-config]
+   (let [{:keys [sensitive? signature visibility]} mastodon-config]
      (-> (.post (mastodon-client mastodon-config) "statuses"
                 (clj->js (merge {:status (->> status-text
                                              (resolve-urls mastodon-config)
@@ -134,22 +134,24 @@
 
 (defn post-status-with-images
   ([mastodon-config status-text urls]
-   (post-status-with-images mastodon-config status-text urls []))
-  ([mastodon-config status-text [url & urls] ids]
+   (post-status-with-images mastodon-config status-text urls [] print))
+  ([mastodon-config status-text urls ids]
+   (post-status-with-images mastodon-config status-text urls ids print))
+  ([mastodon-config status-text [url & urls] ids callback]
    (if url
      (-> request
          (.get url)
          (.on "response"
            (fn [image-stream]
              (post-image mastodon-config image-stream status-text 
-                         #(post-status-with-images status-text urls (conj ids %))))))
-     (post-status mastodon-config status-text (not-empty ids)))))
+                         #(post-status-with-images status-text urls (conj ids %) callback)))))
+     (post-status mastodon-config status-text (not-empty ids) callback))))
 
 (defn-spec get-mastodon-timeline any?
   [mastodon-config mastodon-config?
    callback fn?]
   (.then (.get (mastodon-client mastodon-config) 
-               (str "accounts/" (::account-id mastodon-config)"/statuses") #js {})
+               (str "accounts/" (:account-id mastodon-config)"/statuses") #js {})
          #(let [response (-> % .-data infra/js->edn)]
             (if-let [error (::error response)]
               (infra/exit-with-error error)

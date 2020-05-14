@@ -6,9 +6,7 @@
    [clojure.spec.test.alpha :as st]
    [orchestra.core :refer-macros [defn-spec]]
    [cljs.core :refer [*command-line-args*]]
-   [cljs.reader :as edn]
    [clojure.string :as string]
-   ["fs" :as fs]
    ["rss-parser" :as rss]
    ["tumblr" :as tumblr]
    ["twitter" :as twitter]
@@ -20,23 +18,14 @@
 (s/def ::tumblr map?)
 (s/def ::rss map?)
 
-(def config? (s/keys :req [::mastodon-config]
-                     :opt [::twitter ::tumblr ::rss]))
+(def config? (s/keys :req-un [::mastodon-config]
+                     :opt-un [::twitter ::tumblr ::rss]))
 
-;this has to stay on top - only ns-keywords can be uses in spec
 (defn-spec mastodon-config ::mastodon-config
   [config config?]
-  (::mastodon-config config))
+  (:mastodon-config config))
 
-(defn find-config []
-  (let [config (or (first *command-line-args*)
-                   (-> js/process .-env .-MASTODON_BOT_CONFIG)
-                   "config.edn")]
-    (if (fs/existsSync config)
-      config
-      (infra/exit-with-error (str "failed to read config: " config)))))
-
-(def config (-> (find-config) (fs/readFileSync #js {:encoding "UTF-8"}) edn/read-string))
+(def config (infra/load-config))
 
 (defn trim-text [text]
   (let [max-post-length (masto/max-post-length (mastodon-config config))]
@@ -139,7 +128,7 @@
    (fn [timeline]
      (let [last-post-time (-> timeline first :created_at (js/Date.))]
      ;;post from Twitter
-       (when-let [twitter-config (::twitter config)]
+       (when-let [twitter-config (:twitter config)]
          (let [{:keys [access-keys accounts include-replies? include-rts?]} twitter-config
                client (twitter-client access-keys)]
            (doseq [account accounts]
