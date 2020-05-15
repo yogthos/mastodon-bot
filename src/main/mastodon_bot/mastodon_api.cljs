@@ -162,7 +162,7 @@
    items any?]
   (doseq [{:keys [text media-links]} 
           (->> items
-               (remove #((blocked-content? mastodon-config (:text %))))
+               (remove #(blocked-content? mastodon-config (:text %)))
                (filter #(> (:created-at %) last-post-time)))]
     (if media-links
       (post-status-with-images mastodon-config text media-links)
