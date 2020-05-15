@@ -9,7 +9,6 @@
    ["request" :as request]
    ["mastodon-api" :as mastodon]))
 
-; Todo: think about how namespaced keywords & clj->js can play nicely together
 (s/def ::access_token string?)
 (s/def ::api_url string?)
 (s/def ::account-id string?)
