@@ -11,10 +11,10 @@
    ["tumblr" :as tumblr]
    [mastodon-bot.infra :as infra]
    [mastodon-bot.mastodon-api :as masto]
-   [mastodon-bot.twitter-api :as tw]))
+   [mastodon-bot.twitter-api :as twitter]))
 
 (s/def ::mastodon-config masto/mastodon-config?)
-(s/def ::twitter tw/twitter-config?)
+(s/def ::twitter twitter/twitter-config?)
 (s/def ::tumblr map?)
 (s/def ::rss map?)
 
@@ -107,7 +107,7 @@
                last-post-time
                (for [{:keys [title isoDate pubDate content link]} (-> % infra/js->edn :items)]
                  {:created-at (js/Date. (or isoDate pubDate))
-                  :text (str (trim-text title) "\n\n" (tw/strip-utm link))})))))
+                  :text (str (trim-text title) "\n\n" (twitter/strip-utm link))})))))
 
 (defn tumblr-client [access-keys account]
   (try
@@ -125,7 +125,7 @@
        (when-let [twitter-config (:twitter config)]
          (let [{:keys [accounts]} twitter-config]
            (doseq [account accounts]
-             (tw/user-timeline
+             (twitter/user-timeline
               twitter-config
               account
               (post-tweets last-post-time)))))
