@@ -144,7 +144,7 @@
          (.on "response"
            (fn [image-stream]
              (post-image mastodon-config image-stream status-text 
-                         #(post-status-with-images status-text urls (conj ids %) callback)))))
+                         #(post-status-with-images mastodon-config status-text urls (conj ids %) callback)))))
      (post-status mastodon-config status-text (not-empty ids) callback))))
 
 (defn-spec get-mastodon-timeline any?
@@ -161,7 +161,7 @@
   [mastodon-config mastodon-config?
    last-post-time any?
    items any?]
-  (doseq [{:mastodon-bot.mastodon-api/keys [text media-links]} 
+  (doseq [{:keys [text media-links]} 
           (->> items
                (remove #((blocked-content? mastodon-config (:text %))))
                (filter #(> (:created-at %) last-post-time)))]
