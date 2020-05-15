@@ -9,12 +9,12 @@
    [clojure.string :as string]
    ["rss-parser" :as rss]
    ["tumblr" :as tumblr]
-   ["twitter" :as twitter]
    [mastodon-bot.infra :as infra]
-   [mastodon-bot.mastodon-api :as masto]))
+   [mastodon-bot.mastodon-api :as masto]
+   [mastodon-bot.twitter-api :as tw]))
 
 (s/def ::mastodon-config masto/mastodon-config?)
-(s/def ::twitter map?)
+(s/def ::twitter tw/twitter-config?)
 (s/def ::tumblr map?)
 (s/def ::rss map?)
 
@@ -24,6 +24,10 @@
 (defn-spec mastodon-config ::mastodon-config
   [config config?]
   (:mastodon-config config))
+
+(defn-spec twitter-config ::twitter
+  [config config?]
+  (:twitter config))
 
 (def config (infra/load-config))
 
@@ -96,9 +100,6 @@
             (mastodon-config config)
             last-post-time)))))
 
-(defn strip-utm [news-link]
-  (first (string/split news-link #"\?utm")))
-
 (defn parse-feed [last-post-time parser [title url]]
   (-> (.parseURL parser url)
       (.then #(masto/post-items
@@ -106,14 +107,7 @@
                last-post-time
                (for [{:keys [title isoDate pubDate content link]} (-> % infra/js->edn :items)]
                  {:created-at (js/Date. (or isoDate pubDate))
-                  :text (str (trim-text title) "\n\n" (strip-utm link))})))))
-
-(defn twitter-client [access-keys]
-  (try
-    (twitter. (clj->js access-keys))
-    (catch js/Error e
-      (infra/exit-with-error
-       (str "failed to connect to Twitter: " (.-message e))))))
+                  :text (str (trim-text title) "\n\n" (tw/strip-utm link))})))))
 
 (defn tumblr-client [access-keys account]
   (try
@@ -129,16 +123,12 @@
      (let [last-post-time (-> timeline first :created_at (js/Date.))]
      ;;post from Twitter
        (when-let [twitter-config (:twitter config)]
-         (let [{:keys [access-keys accounts include-replies? include-rts?]} twitter-config
-               client (twitter-client access-keys)]
+         (let [{:keys [accounts]} twitter-config]
            (doseq [account accounts]
-             (.get client
-                   "statuses/user_timeline"
-                   #js {:screen_name account
-                        :tweet_mode "extended"
-                        :include_rts (boolean include-rts?)
-                        :exclude_replies (not (boolean include-replies?))}
-                   (post-tweets last-post-time)))))
+             (tw/user-timeline
+              twitter-config
+              account
+              (post-tweets last-post-time)))))
      ;;post from Tumblr
        (when-let [{:keys [access-keys accounts limit]} (:tumblr config)]
          (doseq [account accounts]
