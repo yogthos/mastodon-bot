@@ -9,7 +9,6 @@
    ["request" :as request]
    ["mastodon-api" :as mastodon]))
 
-; Todo: think about how namespaced keywords & clj->js can play nicely together
 (s/def ::access_token string?)
 (s/def ::api_url string?)
 (s/def ::account-id string?)
@@ -163,7 +162,7 @@
    items any?]
   (doseq [{:keys [text media-links]} 
           (->> items
-               (remove #((blocked-content? mastodon-config (:text %))))
+               (remove #(blocked-content? mastodon-config (:text %)))
                (filter #(> (:created-at %) last-post-time)))]
     (if media-links
       (post-status-with-images mastodon-config text media-links)
