@@ -32,21 +32,16 @@
 
 (def config (infra/load-config))
 
-(defn in [needle haystack]
-  (some (partial = needle) haystack))
-
-
-
 (defn parse-tweet [{created-at            :created_at
                     text                  :full_text
                     {:keys [media]}       :extended_entities
                     {:keys [screen_name]} :user :as tweet}]
   {:created-at (js/Date. created-at)
    :text (transform/trim-text 
-          (mastodon-config config)
           (str (twitter/chop-tail-media-url text media)
                (if (masto/append-screen-name? (mastodon-config config))
-                 (str "\n - " screen_name) "")))
+                 (str "\n - " screen_name) ""))
+          (masto/max-post-length (mastodon-config config)))
    :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
 
 (defmulti parse-tumblr-post :type)
@@ -54,8 +49,8 @@
 (defmethod parse-tumblr-post "text" [{:keys [body date short_url]}]
   {:created-at (js/Date. date)
    :text (str (transform/trim-text
-               (mastodon-config config) 
-               body) 
+               body
+               (masto/max-post-length (mastodon-config config))) 
               "\n\n" short_url)})
 
 (defmethod parse-tumblr-post "photo" [{:keys [caption date photos short_url] :as post}]
@@ -93,8 +88,8 @@
                (for [{:keys [title isoDate pubDate content link]} (-> % infra/js->edn :items)]
                  {:created-at (js/Date. (or isoDate pubDate))
                   :text (str (transform/trim-text
-                              (mastodon-config config) 
-                              title) 
+                              title
+                              (masto/max-post-length (mastodon-config config))) 
                              "\n\n" (twitter/strip-utm link))})))))
 
 (defn tumblr-client [access-keys account]
