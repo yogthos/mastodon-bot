@@ -10,6 +10,7 @@
    ["rss-parser" :as rss]
    ["tumblr" :as tumblr]
    [mastodon-bot.infra :as infra]
+   [mastodon-bot.transform :as transform]
    [mastodon-bot.mastodon-api :as masto]
    [mastodon-bot.twitter-api :as twitter]))
 
@@ -31,24 +32,6 @@
 
 (def config (infra/load-config))
 
-(defn trim-text [text]
-  (let [max-post-length (masto/max-post-length (mastodon-config config))]
-    (cond
-
-      (nil? max-post-length)
-      text
-
-      (> (count text) max-post-length)
-      (reduce
-       (fn [text word]
-         (if (> (+ (count text) (count word)) (- max-post-length 3))
-           (reduced (str text "..."))
-           (str text " " word)))
-       ""
-       (string/split text #" "))
-
-      :else text)))
-
 (defn in [needle haystack]
   (some (partial = needle) haystack))
 
@@ -62,16 +45,21 @@
                     {:keys [media]}       :extended_entities
                     {:keys [screen_name]} :user :as tweet}]
   {:created-at (js/Date. created-at)
-   :text (trim-text (str (chop-tail-media-url text media) 
-                         (if (masto/append-screen-name? (mastodon-config config)) 
-                           (str "\n - " screen_name) "")))
+   :text (transform/trim-text 
+          (mastodon-config config)
+          (str (chop-tail-media-url text media)
+               (if (masto/append-screen-name? (mastodon-config config))
+                 (str "\n - " screen_name) "")))
    :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
 
 (defmulti parse-tumblr-post :type)
 
 (defmethod parse-tumblr-post "text" [{:keys [body date short_url]}]
   {:created-at (js/Date. date)
-   :text (str (trim-text body) "\n\n" short_url)})
+   :text (str (transform/trim-text
+               (mastodon-config config) 
+               body) 
+              "\n\n" short_url)})
 
 (defmethod parse-tumblr-post "photo" [{:keys [caption date photos short_url] :as post}]
   {:created-at (js/Date. date)
@@ -107,7 +95,10 @@
                last-post-time
                (for [{:keys [title isoDate pubDate content link]} (-> % infra/js->edn :items)]
                  {:created-at (js/Date. (or isoDate pubDate))
-                  :text (str (trim-text title) "\n\n" (twitter/strip-utm link))})))))
+                  :text (str (transform/trim-text
+                              (mastodon-config config) 
+                              title) 
+                             "\n\n" (twitter/strip-utm link))})))))
 
 (defn tumblr-client [access-keys account]
   (try
