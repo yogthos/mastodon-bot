@@ -33,6 +33,9 @@
 (defn strip-utm [news-link]
   (first (string/split news-link #"\?utm")))
 
+(defn in [needle haystack]
+  (some (partial = needle) haystack))
+
 ; If the text ends in a link to the media (which is uploaded anyway),
 ; chop it off instead of including the link in the toot
 (defn chop-tail-media-url [text media]
