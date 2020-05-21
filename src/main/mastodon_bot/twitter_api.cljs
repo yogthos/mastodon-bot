@@ -21,9 +21,6 @@
 (s/def ::accounts (s/* ::account))
 (def twitter-config?  (s/keys :req-un [::access-keys ::include-rts? ::include-replies?]))
 
-(defn strip-utm [news-link]
-  (first (string/split news-link #"\?utm")))
-
 (defn-spec twitter-client any?
   [twitter-config twitter-config?]
   (let [{:keys [access-keys]} twitter-config]
@@ -32,6 +29,14 @@
       (catch js/Error e
         (infra/exit-with-error
          (str "failed to connect to Twitter: " (.-message e)))))))
+
+(defn strip-utm [news-link]
+  (first (string/split news-link #"\?utm")))
+
+; If the text ends in a link to the media (which is uploaded anyway),
+; chop it off instead of including the link in the toot
+(defn chop-tail-media-url [text media]
+  (string/replace text #" (\S+)$" #(if (in (%1 1) (map :url media)) "" (%1 0))))
 
 (defn-spec user-timeline any?
   [twitter-config twitter-config?

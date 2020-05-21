@@ -35,10 +35,7 @@
 (defn in [needle haystack]
   (some (partial = needle) haystack))
 
-; If the text ends in a link to the media (which is uploaded anyway),
-; chop it off instead of including the link in the toot
-(defn chop-tail-media-url [text media]
-  (string/replace text #" (\S+)$" #(if (in (%1 1) (map :url media)) "" (%1 0))))
+
 
 (defn parse-tweet [{created-at            :created_at
                     text                  :full_text
@@ -47,7 +44,7 @@
   {:created-at (js/Date. created-at)
    :text (transform/trim-text 
           (mastodon-config config)
-          (str (chop-tail-media-url text media)
+          (str (twitter/chop-tail-media-url text media)
                (if (masto/append-screen-name? (mastodon-config config))
                  (str "\n - " screen_name) "")))
    :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
