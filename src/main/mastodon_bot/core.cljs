@@ -32,18 +32,6 @@
 
 (def config (infra/load-config))
 
-(defn parse-tweet [{created-at            :created_at
-                    text                  :full_text
-                    {:keys [media]}       :extended_entities
-                    {:keys [screen_name]} :user :as tweet}]
-  {:created-at (js/Date. created-at)
-   :text (transform/trim-text 
-          (str (twitter/chop-tail-media-url text media)
-               (if (masto/append-screen-name? (mastodon-config config))
-                 (str "\n - " screen_name) ""))
-          (masto/max-post-length (mastodon-config config)))
-   :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
-
 (defmulti parse-tumblr-post :type)
 
 (defmethod parse-tumblr-post "text" [{:keys [body date short_url]}]
@@ -75,7 +63,9 @@
     (if error
       (infra/exit-with-error error)
       (->> (infra/js->edn tweets)
-           (map parse-tweet)
+           (map twitter/parse-tweet)
+           (map #(transform/to-mastodon
+                  (mastodon-config config) %))
            (masto/post-items 
             (mastodon-config config)
             last-post-time)))))

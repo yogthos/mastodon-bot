@@ -41,6 +41,14 @@
 (defn chop-tail-media-url [text media]
   (string/replace text #" (\S+)$" #(if (in (%1 1) (map :url media)) "" (%1 0))))
 
+(defn parse-tweet [{created-at            :created_at
+                    text                  :full_text
+                    {:keys [media]}       :extended_entities
+                    {:keys [screen_name]} :user :as tweet}]
+  {:created-at (js/Date. created-at)
+   :text (chop-tail-media-url text media)
+   :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
+
 (defn-spec user-timeline any?
   [twitter-config twitter-config?
    account ::account
