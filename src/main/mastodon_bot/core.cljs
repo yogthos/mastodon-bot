@@ -5,14 +5,13 @@
    [clojure.spec.alpha :as s]
    [clojure.spec.test.alpha :as st]
    [orchestra.core :refer-macros [defn-spec]]
-   [cljs.core :refer [*command-line-args*]]
-   [clojure.string :as string]
    ["rss-parser" :as rss]
-   ["tumblr" :as tumblr]
    [mastodon-bot.infra :as infra]
    [mastodon-bot.transform :as transform]
    [mastodon-bot.mastodon-api :as masto]
-   [mastodon-bot.twitter-api :as twitter]))
+   [mastodon-bot.twitter-api :as twitter]
+   [mastodon-bot.tumblr-api :as tumblr]
+   [cljs.core :refer [*command-line-args*]]))
 
 (s/def ::mastodon-config masto/mastodon-config?)
 (s/def ::twitter twitter/twitter-config?)
@@ -32,28 +31,14 @@
 
 (def config (infra/load-config))
 
-(defmulti parse-tumblr-post :type)
-
-(defmethod parse-tumblr-post "text" [{:keys [body date short_url]}]
-  {:created-at (js/Date. date)
-   :text (str (transform/trim-text
-               body
-               (masto/max-post-length (mastodon-config config))) 
-              "\n\n" short_url)})
-
-(defmethod parse-tumblr-post "photo" [{:keys [caption date photos short_url] :as post}]
-  {:created-at (js/Date. date)
-   :text (string/join "\n" [(string/replace caption #"<[^>]*>" "") short_url])
-   :media-links (mapv #(-> % :original_size :url) photos)})
-
-(defmethod parse-tumblr-post :default [post])
-
 (defn post-tumblrs [last-post-time]
   (fn [err response]
     (->> response
          infra/js->edn
          :posts
-         (mapv parse-tumblr-post)
+         (mapv tumblr/parse-tumblr-post)
+         (map #(transform/to-mastodon
+                (mastodon-config config) %))
          (masto/post-items 
           (mastodon-config config)
           last-post-time))))
@@ -82,13 +67,6 @@
                               (masto/max-post-length (mastodon-config config))) 
                              "\n\n" (twitter/strip-utm link))})))))
 
-(defn tumblr-client [access-keys account]
-  (try
-    (tumblr/Blog. account (clj->js access-keys))
-    (catch js/Error e
-      (infra/exit-with-error
-       (str "failed to connect to Tumblr account " account ": " (.-message e))))))
-
 (defn -main []
   (masto/get-mastodon-timeline
    (mastodon-config config)
@@ -105,7 +83,7 @@
      ;;post from Tumblr
        (when-let [{:keys [access-keys accounts limit]} (:tumblr config)]
          (doseq [account accounts]
-           (let [client (tumblr-client access-keys account)]
+           (let [client (tumblr/tumblr-client access-keys account)]
              (.posts client #js {:limit (or limit 5)} (post-tumblrs last-post-time)))))
      ;;post from RSS
        (when-let [feeds (some-> config :rss)]
