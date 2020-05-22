@@ -47,6 +47,7 @@
                     {:keys [screen_name]} :user :as tweet}]
   {:created-at (js/Date. created-at)
    :text (chop-tail-media-url text media)
+   :screen_name screen_name
    :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
 
 (defn-spec user-timeline any?

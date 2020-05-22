@@ -8,9 +8,13 @@
 
 (s/def ::created-at any?)
 (s/def ::text string?)
+(s/def ::untrimmed-text string?)
 (s/def ::media-links string?)
 (s/def ::screen_name string?)
-(def element?  (s/keys :req-un [::created-at ::text ::media-links ::screen_name]))
+(def input?  (s/keys :req-un [::created-at ::text ::screen_name]
+                     :opt-un [::media-links ::untrimmed-text]))
+(def mastodon-output?  (s/keys :req-un [::created-at ::text]
+                               :opt-un [::media-links]))
 
 (defn trim-text [text max-post-length]
   (cond
@@ -26,17 +30,19 @@
          (str text " " word)))
      ""
      (string/split text #" "))
-
+    
     :else text))
 
-(defn-spec to-mastodon any?
+(defn-spec to-mastodon mastodon-output?
   [mastodon-config masto/mastodon-config?
-   input element?]
-  (let [{:keys [created-at text media-links screen_name]} input]
+   input input?]
+  (let [{:keys [created-at text media-links screen_name untrimmed-text]} input]
     {:created-at created-at
-     :text (trim-text
-            (str text
-                 (if (masto/append-screen-name? mastodon-config)
-                   (str "\n - " screen_name) ""))
-            (masto/max-post-length mastodon-config))
+     :text (str (trim-text
+                 text
+                 (masto/max-post-length mastodon-config))
+                (if (some? untrimmed-text)
+                  (str " " untrimmed-text) "")
+                (if (masto/append-screen-name? mastodon-config)
+                  (str "\n - " screen_name) ""))
      :media-links media-links}))
