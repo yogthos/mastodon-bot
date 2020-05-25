@@ -43,18 +43,6 @@
           (mastodon-config config)
           last-post-time))))
 
-(defn post-tweets [last-post-time]
-  (fn [error tweets response]
-    (if error
-      (infra/exit-with-error error)
-      (->> (infra/js->edn tweets)
-           (map twitter/parse-tweet)
-           (map #(transform/to-mastodon
-                  (mastodon-config config) %))
-           (masto/post-items 
-            (mastodon-config config)
-            last-post-time)))))
-
 (defn parse-feed [last-post-time parser [title url]]
   (-> (.parseURL parser url)
       (.then #(masto/post-items
@@ -75,11 +63,11 @@
      ;;post from Twitter
        (when-let [twitter-config (:twitter config)]
          (let [{:keys [accounts]} twitter-config]
-           (doseq [account accounts]
-             (twitter/user-timeline
-              twitter-config
-              account
-              (post-tweets last-post-time)))))
+         (transform/tweets-to-mastodon
+          (mastodon-config config)
+          twitter-config
+          accounts
+          last-post-time)))
      ;;post from Tumblr
        (when-let [{:keys [access-keys accounts limit]} (:tumblr config)]
          (doseq [account accounts]

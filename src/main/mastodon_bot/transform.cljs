@@ -4,7 +4,10 @@
    [clojure.spec.test.alpha :as st]
    [orchestra.core :refer-macros [defn-spec]]
    [clojure.string :as string]
-   [mastodon-bot.mastodon-api :as masto]))
+   [mastodon-bot.infra :as infra]
+   [mastodon-bot.mastodon-api :as masto]
+   [mastodon-bot.twitter-api :as twitter]
+   [mastodon-bot.tumblr-api :as tumblr]))
 
 (s/def ::created-at any?)
 (s/def ::text string?)
@@ -36,13 +39,38 @@
 (defn-spec to-mastodon mastodon-output?
   [mastodon-config masto/mastodon-config?
    input input?]
-  (let [{:keys [created-at text media-links screen_name untrimmed-text]} input]
-    {:created-at created-at
-     :text (str (trim-text
-                 text
-                 (masto/max-post-length mastodon-config))
-                (if (some? untrimmed-text)
+  (let [{:keys [created-at text media-links screen_name untrimmed-text]} input
+        untrimmed (if (some? untrimmed-text)
                   (str " " untrimmed-text) "")
-                (if (masto/append-screen-name? mastodon-config)
-                  (str "\n - " screen_name) ""))
+        sname (if (masto/append-screen-name? mastodon-config)
+                (str "\n - " screen_name) "")
+        trim-length (- (masto/max-post-length mastodon-config)
+                       (count untrimmed)
+                       (count sname))]
+    {:created-at created-at
+     :text (str (trim-text text trim-length)
+                untrimmed
+                sname)
      :media-links media-links}))
+
+(defn-spec post-tweets any?
+  [mastodon-config masto/mastodon-config?
+   last-post-time any?]
+  (fn [error tweets response]
+    (if error
+      (infra/exit-with-error error)
+      (->> (infra/js->edn tweets)
+           (map twitter/parse-tweet)
+           (map #(to-mastodon mastodon-config %))
+           (masto/post-items mastodon-config last-post-time)))))
+
+(defn-spec tweets-to-mastodon any?
+  [mastodon-config masto/mastodon-config?
+   twitter-config twitter/twitter-config?
+   accounts (s/* string?)
+   last-post-time any?]
+  (doseq [account accounts]
+    (twitter/user-timeline
+     twitter-config
+     account
+     (post-tweets mastodon-config last-post-time))))
