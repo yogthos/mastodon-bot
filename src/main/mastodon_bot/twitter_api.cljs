@@ -19,10 +19,11 @@
 (s/def ::include-replies? boolean?)
 (s/def ::account string?)
 (s/def ::accounts (s/* ::account))
-(def twitter-config?  (s/keys :req-un [::access-keys ::include-rts? ::include-replies?]))
+(def twitter-auth?  (s/keys :req-un [::access-keys]))
+(def twitter-transform?  (s/keys :req-un [::include-rts? ::include-replies?]))
 
 (defn-spec twitter-client any?
-  [twitter-config twitter-config?]
+  [twitter-config twitter-auth?]
   (let [{:keys [access-keys]} twitter-config]
     (try
       (twitter. (clj->js access-keys))
@@ -51,7 +52,7 @@
    :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
 
 (defn-spec user-timeline any?
-  [twitter-config twitter-config?
+  [twitter-config twitter-auth?
    account ::account
    callback fn?]
   (let [{:keys [include-rts? include-replies?]} twitter-config]
