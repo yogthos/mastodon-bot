@@ -18,8 +18,14 @@
                      :opt-un [::media-links ::untrimmed-text]))
 (def mastodon-output?  (s/keys :req-un [::created-at ::text]
                                :opt-un [::media-links]))
-
-(def transformations? any?)
+(s/def ::type keyword?)
+(defmulti source-type :type)
+(defmethod source-type :twitter-source [_]
+  (s/merge (s/keys :req-un[::type]) twitter/twitter-source?))
+(s/def ::source (s/multi-spec source-type ::type))
+(s/def ::target any?)
+(s/def ::transformation (s/keys :req-un [::source ::target]))
+(def transformations? (s/* ::transformation))
 
 (defn trim-text [text max-post-length]
   (cond

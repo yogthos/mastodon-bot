@@ -14,13 +14,13 @@
 (s/def ::access_token_secret string?)
 (s/def ::access-keys (s/keys :req-un [::consumer_key ::consumer_secret ::access_token_key 
                                       ::access_token_secret]))
+(def twitter-auth?  (s/keys :req-un [::access-keys]))
 
 (s/def ::include-rts? boolean?)
 (s/def ::include-replies? boolean?)
 (s/def ::account string?)
 (s/def ::accounts (s/* ::account))
-(def twitter-auth?  (s/keys :req-un [::access-keys]))
-(def twitter-transform?  (s/keys :req-un [::include-rts? ::include-replies?]))
+(def twitter-source?  (s/keys :req-un [::include-rts? ::include-replies?]))
 
 (defn-spec twitter-client any?
   [twitter-config twitter-auth?]
