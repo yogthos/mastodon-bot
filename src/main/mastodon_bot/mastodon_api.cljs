@@ -28,12 +28,12 @@
 
 (s/def ::content-filters (s/* ::content-filter))
 (s/def ::keyword-filters (s/* ::keyword-filter))
-(s/def ::mastodon-js-config (s/keys :req-un [::access_token ::api_url]))
-(s/def ::mastodon-clj-config (s/keys :req-un [::account-id ::content-filters ::keyword-filters
+(def mastodon-auth? (s/keys :req-un [::access_token ::api_url]))
+(def mastodon-transform? (s/keys :req-un [::account-id ::content-filters ::keyword-filters
                                               ::max-post-length ::signature ::visibility
                                               ::append-screen-name? ::sensitive? ::resolve-urls?
                                               ::nitter-urls? ::replacements]))
-(def mastodon-config? (s/merge ::mastodon-js-config ::mastodon-clj-config))
+(def mastodon-config? (s/merge mastodon-auth? mastodon-transform?))
 
 (defn-spec content-filter-regexes ::content-filters
   [mastodon-config mastodon-config?]
@@ -57,9 +57,11 @@
   (reduce-kv string/replace text (:replacements mastodon-config)))
 
 (defn-spec mastodon-client any?
-  [mastodon-config mastodon-config?]
-  (or (some-> mastodon-config clj->js mastodon.)
-      (infra/exit-with-error "missing Mastodon client configuration!")))
+  [mastodon-auth mastodon-auth?]
+  (or (some-> mastodon-auth 
+       clj->js 
+       mastodon.)
+      (infra/exit-with-error "missing Mastodon auth configuration!")))
 
 (defn-spec blocked-content? boolean?
   [mastodon-config mastodon-config?

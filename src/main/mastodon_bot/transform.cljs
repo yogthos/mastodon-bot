@@ -19,6 +19,8 @@
 (def mastodon-output?  (s/keys :req-un [::created-at ::text]
                                :opt-un [::media-links]))
 
+(def transformations? any?)
+
 (defn trim-text [text max-post-length]
   (cond
 
@@ -37,7 +39,7 @@
     :else text))
 
 (defn-spec to-mastodon mastodon-output?
-  [mastodon-config masto/mastodon-config?
+  [mastodon-config masto/mastodon-auth?
    input input?]
   (let [{:keys [created-at text media-links screen_name untrimmed-text]} input
         untrimmed (if (some? untrimmed-text)
@@ -54,7 +56,7 @@
      :media-links media-links}))
 
 (defn-spec post-tweets any?
-  [mastodon-config masto/mastodon-config?
+  [mastodon-config masto/mastodon-auth?
    last-post-time any?]
   (fn [error tweets response]
     (if error
@@ -65,8 +67,8 @@
            (masto/post-items mastodon-config last-post-time)))))
 
 (defn-spec tweets-to-mastodon any?
-  [mastodon-config masto/mastodon-config?
-   twitter-config twitter/twitter-config?
+  [mastodon-config masto/mastodon-auth?
+   twitter-config twitter/twitter-auth?
    accounts (s/* string?)
    last-post-time any?]
   (doseq [account accounts]

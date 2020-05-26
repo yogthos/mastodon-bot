@@ -13,21 +13,26 @@
    [mastodon-bot.tumblr-api :as tumblr]
    [cljs.core :refer [*command-line-args*]]))
 
-(s/def ::mastodon-config masto/mastodon-config?)
-(s/def ::twitter twitter/twitter-config?)
+(s/def ::mastodon-auth masto/mastodon-auth?)
+(s/def ::transform transform/transformations?)
+(s/def ::twitter twitter/twitter-auth?)
 (s/def ::tumblr map?)
 (s/def ::rss map?)
 
 (def config? (s/keys :req-un [::mastodon-config]
                      :opt-un [::twitter ::tumblr ::rss]))
 
-(defn-spec mastodon-config ::mastodon-config
+(defn-spec mastodon-auth ::mastodon-auth
   [config config?]
   (:mastodon-config config))
 
-(defn-spec twitter-config ::twitter
+(defn-spec twitter-auth ::twitter
   [config config?]
   (:twitter config))
+
+(defn-spec transform ::transform
+  [config config?]
+  (:transform config))
 
 (def config (infra/load-config))
 
@@ -38,46 +43,49 @@
          :posts
          (mapv tumblr/parse-tumblr-post)
          (map #(transform/to-mastodon
-                (mastodon-config config) %))
+                (mastodon-auth config) %))
          (masto/post-items 
-          (mastodon-config config)
+          (mastodon-auth config)
           last-post-time))))
 
 (defn parse-feed [last-post-time parser [title url]]
   (-> (.parseURL parser url)
       (.then #(masto/post-items
-               (mastodon-config config)
+               (mastodon-auth config)
                last-post-time
                (for [{:keys [title isoDate pubDate content link]} (-> % infra/js->edn :items)]
                  {:created-at (js/Date. (or isoDate pubDate))
                   :text (str (transform/trim-text
                               title
-                              (masto/max-post-length (mastodon-config config))) 
+                              (masto/max-post-length (mastodon-auth config))) 
                              "\n\n" (twitter/strip-utm link))})))))
 
 (defn -main []
-  (masto/get-mastodon-timeline
-   (mastodon-config config)
-   (fn [timeline]
-     (let [last-post-time (-> timeline first :created_at (js/Date.))]
+  (let [mastodon-auth (mastodon-auth config)]
+    (masto/get-mastodon-timeline
+     mastodon-auth
+     (fn [timeline]
+       (let [last-post-time (-> timeline first :created_at (js/Date.))]
      ;;post from Twitter
-       (when-let [twitter-config (:twitter config)]
-         (let [{:keys [accounts]} twitter-config]
-         (transform/tweets-to-mastodon
-          (mastodon-config config)
-          twitter-config
-          accounts
-          last-post-time)))
+         (when-let [twitter-auth (twitter-auth config)]
+           (let [{:keys [accounts]} twitter-auth]
+             (transform/tweets-to-mastodon
+              mastodon-auth
+              twitter-auth
+              accounts
+              last-post-time)))
      ;;post from Tumblr
-       (when-let [{:keys [access-keys accounts limit]} (:tumblr config)]
-         (doseq [account accounts]
-           (let [client (tumblr/tumblr-client access-keys account)]
-             (.posts client #js {:limit (or limit 5)} (post-tumblrs last-post-time)))))
+         (when-let [{:keys [access-keys accounts limit]} (:tumblr config)]
+           (doseq [account accounts]
+             (let [client (tumblr/tumblr-client access-keys account)]
+               (.posts client #js {:limit (or limit 5)} (post-tumblrs last-post-time)))))
      ;;post from RSS
-       (when-let [feeds (some-> config :rss)]
-         (let [parser (rss.)]
-           (doseq [feed feeds]
-             (parse-feed last-post-time parser feed))))))))
+         (when-let [feeds (some-> config :rss)]
+           (let [parser (rss.)]
+             (doseq [feed feeds]
+               (parse-feed last-post-time parser feed)))))))))
 
 (set! *main-cli-fn* -main)
-(st/instrument 'mastodon-config)
+(st/instrument 'mastodon-auth)
+(st/instrument 'twitter-auth)
+(st/instrument 'transform)
