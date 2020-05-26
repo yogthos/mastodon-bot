@@ -2,10 +2,13 @@
                 "src/test"]
  :dependencies [[orchestra "2018.12.06-2"]]
  :builds       {:dev {:target       :node-library
-                      :output-to    "target/lib-mastodon-bot.js"
+                      :output-to    "target/node-lib.js"
                       :exports   {:infra mastodon-bot.core/-main}
-                      :repl-pprint  true
-                      }
+                      :repl-pprint  true}
+                :test {:target    :node-test
+                       :output-to "target/node-tests.js"
+                       :ns-regexp "test$"
+                       :autorun   true}
                 :app {:target    :node-script
                       :output-to "target/mastodon-bot.js"
                       :main      mastodon-bot.core/main
