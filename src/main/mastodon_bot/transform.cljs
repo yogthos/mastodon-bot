@@ -61,7 +61,7 @@
         signature_text (if (some? signature)
                          (str "\n" signature)
                          "")
-        trim-length (- (masto/max-post-length mastodon-auth)
+        trim-length (- (masto/max-post-length target)
                        (count untrimmed)
                        (count sname)
                        (count signature_text))]

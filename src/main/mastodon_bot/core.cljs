@@ -61,7 +61,7 @@
                  {:created-at (js/Date. (or isoDate pubDate))
                   :text (str (transform/trim-text
                               title
-                              (masto/max-post-length (mastodon-auth config))) 
+                              (masto/max-post-length (:target (first (transform config))))) 
                              "\n\n" (twitter/strip-utm link))})))))
 
 (defn -main []

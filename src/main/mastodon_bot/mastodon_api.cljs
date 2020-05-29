@@ -17,6 +17,7 @@
 (s/def ::append-screen-name? boolean?)
 (s/def ::signature string?)
 (s/def ::sensitive? boolean?)
+(s/def ::media-only? boolean?)
 (s/def ::resolve-urls? boolean?)
 (s/def ::nitter-urls? boolean?)
 (s/def ::visibility #{"direct" "private" "unlisted" "public"})
@@ -31,11 +32,12 @@
 (def mastodon-auth? (s/keys :req-un [::account-id ::access_token ::api_url]))
 (def mastodon-target? (s/keys :opt-un [
                                        ;::content-filters ::keyword-filters
-                                       ;::max-post-length 
+                                       ::max-post-length 
                                        ::signature 
                                        ::visibility
                                        ::append-screen-name? 
-                                       ::sensitive? 
+                                       ::sensitive?
+                                       ::media-only?
                                        ;::resolve-urls?
                                        ;::nitter-urls? ::replacements
                                        ]))
@@ -51,8 +53,8 @@
   (mapv re-pattern (:keyword-filters mastodon-config)))
 
 (defn-spec max-post-length ::max-post-length
-  [mastodon-config mastodon-config?]
-  (:max-post-length mastodon-config))
+  [target mastodon-target?]
+  (:max-post-length target))
 
 (defn-spec perform-replacements string?
   [mastodon-config mastodon-config?
@@ -163,7 +165,7 @@
                (filter #(> (:created-at %) last-post-time)))]
     (if media-links
       (post-status-with-images mastodon-auth target text media-links)
-      (when-not (::media-only? mastodon-auth)
+      (when-not (:media-only? target)
         (post-status mastodon-auth target text)))))
 
 (defn-spec get-mastodon-timeline any?

@@ -15,6 +15,8 @@
                            :accounts ["an-twitter-account"]} 
                   :target {:type :mastodon-target
                            :append-screen-name? true
+                           :media-only? false
+                           :max-post-length 500
                            :visibility "unlisted"
                            :sensitive? true
                            :signature "my-bot"}}])))
