@@ -55,9 +55,6 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
             ;; optional boolean defaults to false
             ;; only sources containing media will be posted when set to true
             :media-only? true
-            ;; optional visibility flag: direct, private, unlisted, public
-            ;; defaults to public        
-            :visibility "unlisted"
             ;; optional limit for the post length
             :max-post-length 300
             ;; optionally try to resolve URLs in posts to skip URL shorteners
@@ -82,6 +79,9 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
                       ;; optional flag specifying wether the name of the account
                       ;; will be appended in the post, defaults to false
                       :append-screen-name? false
+                      ;; optional visibility flag: direct, private, unlisted, public
+                      ;; defaults to public
+                      :visibility "unlisted"
                       ;; optional signature for posts
                       :signature "#newsbot"}}]
 }

@@ -82,7 +82,7 @@
       (->> (infra/js->edn tweets)
            (map twitter/parse-tweet)
            (map #(intermediate-to-mastodon mastodon-auth target %))
-           (masto/post-items mastodon-auth last-post-time)))))
+           (masto/post-items mastodon-auth target last-post-time)))))
 
 (defn-spec tweets-to-mastodon any?
   [mastodon-auth masto/mastodon-auth?

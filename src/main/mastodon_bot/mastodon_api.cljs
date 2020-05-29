@@ -19,7 +19,7 @@
 (s/def ::sensitive? boolean?)
 (s/def ::resolve-urls? boolean?)
 (s/def ::nitter-urls? boolean?)
-(s/def ::visibility string?)
+(s/def ::visibility #{"direct" "private" "unlisted" "public"})
 (s/def ::replacements string?)
 (s/def ::max-post-length (fn [n] (and
                                  (int? n)
@@ -33,7 +33,7 @@
                                        ;::content-filters ::keyword-filters
                                        ;::max-post-length 
                                        ::signature 
-                                       ;::visibility
+                                       ::visibility
                                        ::append-screen-name? 
                                        ;::sensitive? ::resolve-urls?
                                        ;::nitter-urls? ::replacements
@@ -106,64 +106,72 @@
     (string/replace #"https://twitter.com" "https://nitter.net")))
 
 (defn post-status
-  ([mastodon-config status-text]
-   (post-status mastodon-config status-text nil print))
-  ([mastodon-config status-text media-ids]
-   (post-status mastodon-config status-text media-ids print))
-  ([mastodon-config status-text media-ids callback]
-   (let [{:keys [sensitive? signature visibility]} mastodon-config]
-     (-> (.post (mastodon-client mastodon-config) "statuses"
+  ([mastodon-auth target status-text]
+   (post-status mastodon-auth target status-text nil print))
+  ([mastodon-auth target status-text media-ids]
+   (post-status mastodon-auth target status-text media-ids print))
+  ([mastodon-auth target status-text media-ids callback]
+   (let [{:keys [sensitive?]} mastodon-auth
+         {:keys [visibility]} target]
+     (-> (.post (mastodon-client mastodon-auth) "statuses"
                 (clj->js (merge {:status (->> status-text
-                                             (resolve-urls mastodon-config)
-                                             (perform-replacements mastodon-config))}
+                                             (resolve-urls mastodon-auth)
+                                             (perform-replacements mastodon-auth))}
                                 (when media-ids {:media_ids media-ids})
                                 (when sensitive? {:sensitive sensitive?})
                                 (when visibility {:visibility visibility}))))
          (.then #(-> % callback))))))
 
 (defn-spec post-image any?
-  [mastodon-config mastodon-config?
+  [mastodon-auth mastodon-auth?
+   target mastodon-target?
    image-stream any?
    description string?
    callback fn?]
-  (-> (.post (mastodon-client mastodon-config) "media" 
+  (-> (.post (mastodon-client mastodon-auth) "media" 
              #js {:file image-stream :description description})
       (.then #(-> % .-data .-id callback))))
 
 (defn post-status-with-images
-  ([mastodon-config status-text urls]
-   (post-status-with-images mastodon-config status-text urls [] print))
-  ([mastodon-config status-text urls ids]
-   (post-status-with-images mastodon-config status-text urls ids print))
-  ([mastodon-config status-text [url & urls] ids callback]
+  ([mastodon-auth target status-text urls]
+   (post-status-with-images mastodon-auth target status-text urls [] print))
+  ([mastodon-auth target status-text urls ids]
+   (post-status-with-images mastodon-auth target status-text urls ids print))
+  ([mastodon-auth target status-text [url & urls] ids callback]
    (if url
      (-> request
          (.get url)
          (.on "response"
            (fn [image-stream]
-             (post-image mastodon-config image-stream status-text 
-                         #(post-status-with-images mastodon-config status-text urls (conj ids %) callback)))))
-     (post-status mastodon-config status-text (not-empty ids) callback))))
-
-(defn-spec get-mastodon-timeline any?
-  [mastodon-auth mastodon-auth?
-   callback fn?]
-  (.then (.get (mastodon-client mastodon-auth) 
-               (str "accounts/" (:account-id mastodon-auth)"/statuses") #js {})
-         #(let [response (-> % .-data infra/js->edn)]
-            (if-let [error (::error response)]
-              (infra/exit-with-error error)
-              (callback response)))))
+             (post-image mastodon-auth target image-stream status-text 
+                         #(post-status-with-images mastodon-auth 
+                                                   target
+                                                   status-text 
+                                                   urls 
+                                                   (conj ids %) 
+                                                   callback)))))
+     (post-status mastodon-auth target status-text (not-empty ids) callback))))
 
 (defn-spec post-items any?
-  [mastodon-config mastodon-config?
+  [mastodon-auth mastodon-auth?
+   target mastodon-target?
    last-post-time any?
    items any?]
   (doseq [{:keys [text media-links]} 
           (->> items
-               (remove #(blocked-content? mastodon-config (:text %)))
+               (remove #(blocked-content? mastodon-auth (:text %)))
                (filter #(> (:created-at %) last-post-time)))]
     (if media-links
-      (post-status-with-images mastodon-config text media-links)
-      (when-not (::media-only? mastodon-config)
-        (post-status mastodon-config text)))))
+      (post-status-with-images mastodon-auth target text media-links)
+      (when-not (::media-only? mastodon-auth)
+        (post-status mastodon-auth target text)))))
+
+(defn-spec get-mastodon-timeline any?
+  [mastodon-auth mastodon-auth?
+   callback fn?]
+  (.then (.get (mastodon-client mastodon-auth)
+               (str "accounts/" (:account-id mastodon-auth) "/statuses") #js {})
+         #(let [response (-> % .-data infra/js->edn)]
+            (if-let [error (::error response)]
+              (infra/exit-with-error error)
+              (callback response)))))

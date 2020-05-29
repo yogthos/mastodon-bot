@@ -48,12 +48,14 @@
                 (:target (first (transform config))) %))
          (masto/post-items 
           (mastodon-auth config)
+          (:target (first (transform config)))
           last-post-time))))
 
 (defn parse-feed [last-post-time parser [title url]]
   (-> (.parseURL parser url)
       (.then #(masto/post-items
                (mastodon-auth config)
+               (:target (first (transform config)))
                last-post-time
                (for [{:keys [title isoDate pubDate content link]} (-> % infra/js->edn :items)]
                  {:created-at (js/Date. (or isoDate pubDate))
