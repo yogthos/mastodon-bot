@@ -13,4 +13,5 @@
                            :include-replies? false
                            :include-rts? true
                            :accounts ["an-twitter-account"]} 
-                  :target {}}])))
+                  :target {:type :mastodon-target
+                           :signature "my-bot"}}])))

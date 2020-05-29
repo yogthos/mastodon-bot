@@ -23,7 +23,10 @@
 (defmethod source-type :twitter-source [_]
   (s/merge (s/keys :req-un[::type]) twitter/twitter-source?))
 (s/def ::source (s/multi-spec source-type ::type))
-(s/def ::target any?)
+(defmulti target-type :type)
+(defmethod target-type :mastodon-target [_]
+  (s/merge (s/keys :req-un [::type]) masto/mastodon-target?))
+(s/def ::target (s/multi-spec target-type ::type))
 (s/def ::transformation (s/keys :req-un [::source ::target]))
 (def transformations? (s/* ::transformation))
 
@@ -45,45 +48,53 @@
     :else text))
 
 (defn-spec to-mastodon mastodon-output?
-  [mastodon-config masto/mastodon-auth?
+  [mastodon-auth masto/mastodon-auth?
+   target masto/mastodon-target?
    input input?]
   (let [{:keys [created-at text media-links screen_name untrimmed-text]} input
+        {:keys [signature]} target
         untrimmed (if (some? untrimmed-text)
-                  (str " " untrimmed-text) "")
-        sname (if (masto/append-screen-name? mastodon-config)
+                    (str " " untrimmed-text) "")
+        sname (if (masto/append-screen-name? mastodon-auth)
                 (str "\n - " screen_name) "")
-        trim-length (- (masto/max-post-length mastodon-config)
+        signature_text (if (some? signature)
+                         (str "\n" signature)
+                         "")
+        trim-length (- (masto/max-post-length mastodon-auth)
                        (count untrimmed)
-                       (count sname))]
+                       (count sname)
+                       (count signature_text))]
     {:created-at created-at
      :text (str (trim-text text trim-length)
                 untrimmed
-                sname)
+                sname
+                signature_text)
      :media-links media-links}))
 
-(defn-spec post-tweets any?
-  [mastodon-config masto/mastodon-auth?
+(defn-spec post-tweets-to-mastodon any?
+  [mastodon-auth masto/mastodon-auth?
+   target masto/mastodon-target?
    last-post-time any?]
   (fn [error tweets response]
     (if error
       (infra/exit-with-error error)
       (->> (infra/js->edn tweets)
            (map twitter/parse-tweet)
-           (map #(to-mastodon mastodon-config %))
-           (masto/post-items mastodon-config last-post-time)))))
+           (map #(to-mastodon mastodon-auth target %))
+           (masto/post-items mastodon-auth last-post-time)))))
 
 (defn-spec tweets-to-mastodon any?
   [mastodon-auth masto/mastodon-auth?
    twitter-auth twitter/twitter-auth?
    transformation ::transformation
    last-post-time any?]
-  (let [{:keys [source target]} transformation
-        {:keys [accounts include-rts? include-replies?]} source]
-    (doseq [account accounts]
-      (println account)
+  (let [{:keys [source target]} transformation]
+    (doseq [account (:accounts source)]
       (twitter/user-timeline
        twitter-auth
-       include-rts? 
-       include-replies?
+       source
        account
-       (post-tweets mastodon-auth last-post-time)))))
+       (post-tweets-to-mastodon 
+        mastodon-auth
+        target
+        last-post-time)))))

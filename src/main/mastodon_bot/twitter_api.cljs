@@ -20,7 +20,7 @@
 (s/def ::include-replies? boolean?)
 (s/def ::account string?)
 (s/def ::accounts (s/* ::account))
-(def twitter-source?  (s/keys :req-un [::include-rts? ::include-replies?]))
+(def twitter-source?  (s/keys :req-un [::include-rts? ::include-replies? ::accounts]))
 
 (defn-spec twitter-client any?
   [twitter-auth twitter-auth?]
@@ -53,15 +53,15 @@
 
 (defn-spec user-timeline any?
   [twitter-auth twitter-auth?
-   include-rts? ::include-rts?
-   include-replies? ::include-replies?
+   source twitter-source?
    account ::account
    callback fn?]
-  (.get (twitter-client twitter-auth)
-        "statuses/user_timeline"
-        #js {:screen_name account
-             :tweet_mode "extended"
-             :include_rts (boolean include-rts?)
-             :exclude_replies (not (boolean include-replies?))}
-        callback))
+  (let [{:keys [include-rts? include-replies?]} source]
+    (.get (twitter-client twitter-auth)
+          "statuses/user_timeline"
+          #js {:screen_name account
+               :tweet_mode "extended"
+               :include_rts (boolean include-rts?)
+               :exclude_replies (not (boolean include-replies?))}
+          callback)))
   

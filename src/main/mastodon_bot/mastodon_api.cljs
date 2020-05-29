@@ -28,12 +28,17 @@
 
 (s/def ::content-filters (s/* ::content-filter))
 (s/def ::keyword-filters (s/* ::keyword-filter))
-(def mastodon-auth? (s/keys :req-un [::access_token ::api_url]))
-(def mastodon-transform? (s/keys :req-un [::account-id ::content-filters ::keyword-filters
-                                              ::max-post-length ::signature ::visibility
-                                              ::append-screen-name? ::sensitive? ::resolve-urls?
-                                              ::nitter-urls? ::replacements]))
-(def mastodon-config? (s/merge mastodon-auth? mastodon-transform?))
+(def mastodon-auth? (s/keys :req-un [::account-id ::access_token ::api_url]))
+(def mastodon-target? (s/keys :req-un [
+                                       ;::content-filters ::keyword-filters
+                                       ;::max-post-length 
+                                       ::signature 
+                                       ;::visibility
+                                       ;::append-screen-name? ::sensitive? ::resolve-urls?
+                                       ;::nitter-urls? ::replacements
+                                       ]))
+(def mastodon-config? (s/merge mastodon-auth? mastodon-target?))
+
 
 (defn-spec content-filter-regexes ::content-filters
   [mastodon-config mastodon-config?]
@@ -103,13 +108,6 @@
     (:nitter-urls? mastodon-config)
     (string/replace #"https://twitter.com" "https://nitter.net")))
 
-(defn-spec set-signature string?
-  [mastodon-config mastodon-config?
-   text string?]
-  (if-let [signature (:signature mastodon-config )]
-    (str text "\n" signature)
-    text))
-
 (defn post-status
   ([mastodon-config status-text]
    (post-status mastodon-config status-text nil print))
@@ -120,8 +118,7 @@
      (-> (.post (mastodon-client mastodon-config) "statuses"
                 (clj->js (merge {:status (->> status-text
                                              (resolve-urls mastodon-config)
-                                             (perform-replacements mastodon-config)
-                                             (set-signature mastodon-config))}
+                                             (perform-replacements mastodon-config))}
                                 (when media-ids {:media_ids media-ids})
                                 (when sensitive? {:sensitive sensitive?})
                                 (when visibility {:visibility visibility}))))
@@ -152,10 +149,10 @@
      (post-status mastodon-config status-text (not-empty ids) callback))))
 
 (defn-spec get-mastodon-timeline any?
-  [mastodon-config mastodon-config?
+  [mastodon-auth mastodon-auth?
    callback fn?]
-  (.then (.get (mastodon-client mastodon-config) 
-               (str "accounts/" (:account-id mastodon-config)"/statuses") #js {})
+  (.then (.get (mastodon-client mastodon-auth) 
+               (str "accounts/" (:account-id mastodon-auth)"/statuses") #js {})
          #(let [response (-> % .-data infra/js->edn)]
             (if-let [error (::error response)]
               (infra/exit-with-error error)

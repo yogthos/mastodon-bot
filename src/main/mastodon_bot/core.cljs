@@ -43,7 +43,9 @@
          :posts
          (mapv tumblr/parse-tumblr-post)
          (map #(transform/to-mastodon
-                (mastodon-auth config) %))
+                (mastodon-auth config)
+                ;todo: fix this
+                (:target (first (transform config))) %))
          (masto/post-items 
           (mastodon-auth config)
           last-post-time))))
