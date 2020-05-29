@@ -42,7 +42,7 @@
          infra/js->edn
          :posts
          (mapv tumblr/parse-tumblr-post)
-         (map #(transform/to-mastodon
+         (map #(transform/intermediate-to-mastodon
                 (mastodon-auth config)
                 ;todo: fix this
                 (:target (first (transform config))) %))

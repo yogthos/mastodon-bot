@@ -47,7 +47,7 @@
     
     :else text))
 
-(defn-spec to-mastodon mastodon-output?
+(defn-spec intermediate-to-mastodon mastodon-output?
   [mastodon-auth masto/mastodon-auth?
    target masto/mastodon-target?
    input input?]
@@ -56,7 +56,7 @@
         untrimmed (if (some? untrimmed-text)
                     (str " " untrimmed-text) "")
         sname (if (masto/append-screen-name? mastodon-auth)
-                (str "\n - " screen_name) "")
+                (str "\n#" screen_name) "")
         signature_text (if (some? signature)
                          (str "\n" signature)
                          "")
@@ -80,7 +80,7 @@
       (infra/exit-with-error error)
       (->> (infra/js->edn tweets)
            (map twitter/parse-tweet)
-           (map #(to-mastodon mastodon-auth target %))
+           (map #(intermediate-to-mastodon mastodon-auth target %))
            (masto/post-items mastodon-auth last-post-time)))))
 
 (defn-spec tweets-to-mastodon any?
