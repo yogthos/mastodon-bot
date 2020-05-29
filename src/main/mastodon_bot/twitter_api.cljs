@@ -23,8 +23,8 @@
 (def twitter-source?  (s/keys :req-un [::include-rts? ::include-replies?]))
 
 (defn-spec twitter-client any?
-  [twitter-config twitter-auth?]
-  (let [{:keys [access-keys]} twitter-config]
+  [twitter-auth twitter-auth?]
+  (let [{:keys [access-keys]} twitter-auth]
     (try
       (twitter. (clj->js access-keys))
       (catch js/Error e
@@ -52,15 +52,16 @@
    :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
 
 (defn-spec user-timeline any?
-  [twitter-config twitter-auth?
+  [twitter-auth twitter-auth?
+   include-rts? ::include-rts?
+   include-replies? ::include-replies?
    account ::account
    callback fn?]
-  (let [{:keys [include-rts? include-replies?]} twitter-config]
-    (.get (twitter-client twitter-config)
-          "statuses/user_timeline"
-          #js {:screen_name account
-               :tweet_mode "extended"
-               :include_rts (boolean include-rts?)
-               :exclude_replies (not (boolean include-replies?))}
-          callback)))
+  (.get (twitter-client twitter-auth)
+        "statuses/user_timeline"
+        #js {:screen_name account
+             :tweet_mode "extended"
+             :include_rts (boolean include-rts?)
+             :exclude_replies (not (boolean include-replies?))}
+        callback))
   

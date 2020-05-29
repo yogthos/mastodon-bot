@@ -68,12 +68,13 @@
        (let [last-post-time (-> timeline first :created_at (js/Date.))]
      ;;post from Twitter
          (when-let [twitter-auth (twitter-auth config)]
-           (let [{:keys [accounts]} twitter-auth]
-             (transform/tweets-to-mastodon
-              mastodon-auth
-              twitter-auth
-              accounts
-              last-post-time)))
+           (let [{:keys [transform]} config]
+             (doseq [transformation transform]
+               (transform/tweets-to-mastodon
+                mastodon-auth
+                twitter-auth
+                transformation
+                last-post-time))))
      ;;post from Tumblr
          (when-let [{:keys [access-keys accounts limit]} (:tumblr config)]
            (doseq [account accounts]

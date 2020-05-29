@@ -32,13 +32,7 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
            {:consumer_key "XXXX"
             :consumer_secret "XXXX"
             :access_token_key "XXXX"
-            :access_token_secret "XXXX"}
-           ;; optional, defaults to false
-           :include-replies? false
-           ;; optional, defaults to false
-           :include-rts? false
-           ;; accounts you wish to mirror
-           :accounts ["arstechnica" "WIRED"]}
+            :access_token_secret "XXXX"}}
  ;; add Tumblr config to mirror Tumblr accounts
  :tumblr {:access-keys
           {:consumer_key "XXXX"
@@ -81,7 +75,16 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
             ;; any posts not matching the regexes will be filtered out
             :keyword-filters [".*clojure.*"]
             ;; Replace Twitter links by Nitter
-            :nitter-urls? false}}
+            :nitter-urls? false}
+:transform [{:source {:type :twitter-source
+                       ;; optional, defaults to false
+                       :include-replies? false
+                       ;; optional, defaults to false
+                       :include-rts? false
+                       ;; accounts you wish to mirror
+                       :accounts ["arstechnica" "WIRED"]}
+             :target {}}]
+}
 ```
 
 * the bot looks for `config.edn` at its relative path by default, an alternative location can be specified either using the `MASTODON_BOT_CONFIG` environment variable or passing the path to config as an argument

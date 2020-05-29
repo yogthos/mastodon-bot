@@ -73,12 +73,17 @@
            (masto/post-items mastodon-config last-post-time)))))
 
 (defn-spec tweets-to-mastodon any?
-  [mastodon-config masto/mastodon-auth?
-   twitter-config twitter/twitter-auth?
-   accounts (s/* string?)
+  [mastodon-auth masto/mastodon-auth?
+   twitter-auth twitter/twitter-auth?
+   transformation ::transformation
    last-post-time any?]
-  (doseq [account accounts]
-    (twitter/user-timeline
-     twitter-config
-     account
-     (post-tweets mastodon-config last-post-time))))
+  (let [{:keys [source target]} transformation
+        {:keys [accounts include-rts? include-replies?]} source]
+    (doseq [account accounts]
+      (println account)
+      (twitter/user-timeline
+       twitter-auth
+       include-rts? 
+       include-replies?
+       account
+       (post-tweets mastodon-auth last-post-time)))))
