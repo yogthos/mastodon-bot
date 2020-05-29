@@ -20,4 +20,5 @@
                            :max-post-length 500
                            :visibility "unlisted"
                            :sensitive? true
-                           :signature "my-bot"}}])))
+                           :signature "my-bot"}
+                  :resolve-urls? true}])))

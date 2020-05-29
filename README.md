@@ -84,7 +84,10 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
                       ;; optional limit for the post length
                       :max-post-length 300
                       ;; optional signature for posts
-                      :signature "#newsbot"}}]
+                      :signature "#newsbot"}
+             ;; optionally try to resolve URLs in posts to skip URL shorteners
+             ;; defaults to false
+             :resolve-urls? true}]
 }
 ```
 

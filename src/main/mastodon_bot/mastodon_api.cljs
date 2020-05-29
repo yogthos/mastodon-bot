@@ -5,7 +5,6 @@
    [orchestra.core :refer-macros [defn-spec]]
    [clojure.string :as string]
    [mastodon-bot.infra :as infra]
-   ["deasync" :as deasync]
    ["request" :as request]
    ["mastodon-api" :as mastodon]))
 
@@ -18,7 +17,6 @@
 (s/def ::signature string?)
 (s/def ::sensitive? boolean?)
 (s/def ::media-only? boolean?)
-(s/def ::resolve-urls? boolean?)
 (s/def ::visibility #{"direct" "private" "unlisted" "public"})
 (s/def ::replacements string?)
 (s/def ::max-post-length (fn [n] (and
@@ -37,7 +35,6 @@
                                        ::append-screen-name? 
                                        ::sensitive?
                                        ::media-only?
-                                       ;::resolve-urls?
                                        ;::replacements
                                        ]))
 (def mastodon-config? (s/merge mastodon-auth? mastodon-target?))
@@ -80,31 +77,6 @@
    status-id string?]
   (.delete (mastodon-client mastodon-config) (str "statuses/" status-id) #js {}))
 
-;; TODO: move to transform
-(defn resolve-url [[uri]]
-  (try
-    (or
-     (some-> ((deasync request)
-              #js {:method "GET"
-                   :uri (if (string/starts-with? uri "https://") uri (str "https://" uri))
-                   :followRedirect false})
-             (.-headers)
-             (.-location)
-             (string/replace "?mbid=social_twitter" ""))
-     uri)
-    (catch js/Error _ uri)))
-
-;; TODO: move to transform
-(def shortened-url-pattern #"(https?://)?(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,}))\.?)(?::\d{2,5})?(?:[/?#]\S*)?")
-
-; TODO: move to transform
-(defn-spec resolve-urls string?
-  [mastodon-config mastodon-config?
-   text string?]
-  (cond-> text
-    (:resolve-urls? mastodon-config)
-    (string/replace shortened-url-pattern resolve-url)))
-
 (defn post-status
   ([mastodon-auth target status-text]
    (post-status mastodon-auth target status-text nil print))
@@ -114,7 +86,6 @@
    (let [{:keys [visibility sensitive?]} target]
      (-> (.post (mastodon-client mastodon-auth) "statuses"
                 (clj->js (merge {:status (->> status-text
-                                             (resolve-urls mastodon-auth)
                                              (perform-replacements mastodon-auth))}
                                 (when media-ids {:media_ids media-ids})
                                 (when sensitive? {:sensitive sensitive?})

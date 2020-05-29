@@ -7,7 +7,9 @@
    [mastodon-bot.infra :as infra]
    [mastodon-bot.mastodon-api :as masto]
    [mastodon-bot.twitter-api :as twitter]
-   [mastodon-bot.tumblr-api :as tumblr]))
+   [mastodon-bot.tumblr-api :as tumblr]
+   ["deasync" :as deasync]
+   ["request" :as request]))
 
 (s/def ::created-at any?)
 (s/def ::text string?)
@@ -19,6 +21,7 @@
 (def mastodon-output?  (s/keys :req-un [::created-at ::text]
                                :opt-un [::media-links]))
 (s/def ::type keyword?)
+(s/def ::resolve-urls? boolean?)
 (defmulti source-type :type)
 (defmethod source-type :twitter-source [_]
   (s/merge (s/keys :req-un[::type]) twitter/twitter-source?))
@@ -27,7 +30,9 @@
 (defmethod target-type :mastodon-target [_]
   (s/merge (s/keys :req-un [::type]) masto/mastodon-target?))
 (s/def ::target (s/multi-spec target-type ::type))
-(s/def ::transformation (s/keys :req-un [::source ::target]))
+
+(s/def ::transformation (s/keys :req-un [::source ::target]
+                                :opt-un [::resolve-urls?]))
 (def transformations? (s/* ::transformation))
 
 (defn trim-text [text max-post-length]
@@ -46,6 +51,27 @@
      (string/split text #" "))
     
     :else text))
+
+(defn resolve-url [[uri]]
+  (try
+    (or
+     (some-> ((deasync request)
+              #js {:method "GET"
+                   :uri (if (string/starts-with? uri "https://") uri (str "https://" uri))
+                   :followRedirect false})
+             (.-headers)
+             (.-location)
+             (string/replace "?mbid=social_twitter" ""))
+     uri)
+    (catch js/Error _ uri)))
+
+(def shortened-url-pattern #"(https?://)?(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,}))\.?)(?::\d{2,5})?(?:[/?#]\S*)?")
+
+(defn-spec intermediate-resolve-urls string?
+  [resolve-urls? ::resolve-urls?
+   input input?]
+  (when resolve-urls?
+    (update input :text #(string/replace % shortened-url-pattern resolve-url))))
 
 ; TODO: move this to mastodon-api - seems to belong strongly to mastodon
 (defn-spec intermediate-to-mastodon mastodon-output?
@@ -74,6 +100,7 @@
 
 (defn-spec post-tweets-to-mastodon any?
   [mastodon-auth masto/mastodon-auth?
+   resolve-urls? ::resolve-urls?
    source twitter/twitter-source?
    target masto/mastodon-target?
    last-post-time any?]
@@ -82,7 +109,8 @@
       (infra/exit-with-error error)
       (->> (infra/js->edn tweets)
            (map twitter/parse-tweet)
-           (map twitter/nitter-url source)
+           (map #(intermediate-resolve-urls resolve-urls? %))
+           (map #(twitter/nitter-url source %))
            (map #(intermediate-to-mastodon mastodon-auth target %))
            (masto/post-items mastodon-auth target last-post-time)))))
 
@@ -91,7 +119,7 @@
    twitter-auth twitter/twitter-auth?
    transformation ::transformation
    last-post-time any?]
-  (let [{:keys [source target]} transformation]
+  (let [{:keys [source target resolve-urls?]} transformation]
     (doseq [account (:accounts source)]
       (twitter/user-timeline
        twitter-auth
@@ -99,6 +127,7 @@
        account
        (post-tweets-to-mastodon 
         mastodon-auth
+        resolve-urls?
         source
         target
         last-post-time)))))
