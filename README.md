@@ -50,8 +50,6 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
             ;; e.g: https://mastodon.social/web/accounts/294795
             :account-id "XXXX"
             :api_url "https://botsin.space/api/v1/"
-            ;; optional boolean to mark content as sensitive
-            :sensitive? true
             ;; optional boolean defaults to false
             ;; only sources containing media will be posted when set to true
             :media-only? true
@@ -82,6 +80,8 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
                       ;; optional visibility flag: direct, private, unlisted, public
                       ;; defaults to public
                       :visibility "unlisted"
+                      ;; optional boolean to mark content as sensitive
+                      :sensitive? true
                       ;; optional signature for posts
                       :signature "#newsbot"}}]
 }

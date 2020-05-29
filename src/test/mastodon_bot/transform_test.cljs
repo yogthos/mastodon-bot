@@ -16,4 +16,5 @@
                   :target {:type :mastodon-target
                            :append-screen-name? true
                            :visibility "unlisted"
+                           :sensitive? true
                            :signature "my-bot"}}])))

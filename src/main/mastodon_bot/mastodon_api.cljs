@@ -35,7 +35,8 @@
                                        ::signature 
                                        ::visibility
                                        ::append-screen-name? 
-                                       ;::sensitive? ::resolve-urls?
+                                       ::sensitive? 
+                                       ;::resolve-urls?
                                        ;::nitter-urls? ::replacements
                                        ]))
 (def mastodon-config? (s/merge mastodon-auth? mastodon-target?))
@@ -111,8 +112,7 @@
   ([mastodon-auth target status-text media-ids]
    (post-status mastodon-auth target status-text media-ids print))
   ([mastodon-auth target status-text media-ids callback]
-   (let [{:keys [sensitive?]} mastodon-auth
-         {:keys [visibility]} target]
+   (let [{:keys [visibility sensitive?]} target]
      (-> (.post (mastodon-client mastodon-auth) "statuses"
                 (clj->js (merge {:status (->> status-text
                                              (resolve-urls mastodon-auth)
