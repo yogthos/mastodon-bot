@@ -19,7 +19,6 @@
 (s/def ::sensitive? boolean?)
 (s/def ::media-only? boolean?)
 (s/def ::resolve-urls? boolean?)
-(s/def ::nitter-urls? boolean?)
 (s/def ::visibility #{"direct" "private" "unlisted" "public"})
 (s/def ::replacements string?)
 (s/def ::max-post-length (fn [n] (and
@@ -39,7 +38,7 @@
                                        ::sensitive?
                                        ::media-only?
                                        ;::resolve-urls?
-                                       ;::nitter-urls? ::replacements
+                                       ;::replacements
                                        ]))
 (def mastodon-config? (s/merge mastodon-auth? mastodon-target?))
 
@@ -81,7 +80,7 @@
    status-id string?]
   (.delete (mastodon-client mastodon-config) (str "statuses/" status-id) #js {}))
 
-;; TODO: move to twitter
+;; TODO: move to transform
 (defn resolve-url [[uri]]
   (try
     (or
@@ -95,18 +94,16 @@
      uri)
     (catch js/Error _ uri)))
 
-;; TODO: move to twitter
+;; TODO: move to transform
 (def shortened-url-pattern #"(https?://)?(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,}))\.?)(?::\d{2,5})?(?:[/?#]\S*)?")
 
-;; TODO: move to twitter
+; TODO: move to transform
 (defn-spec resolve-urls string?
   [mastodon-config mastodon-config?
    text string?]
   (cond-> text
     (:resolve-urls? mastodon-config)
-    (string/replace shortened-url-pattern resolve-url)
-    (:nitter-urls? mastodon-config)
-    (string/replace #"https://twitter.com" "https://nitter.net")))
+    (string/replace shortened-url-pattern resolve-url)))
 
 (defn post-status
   ([mastodon-auth target status-text]

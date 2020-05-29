@@ -74,6 +74,7 @@
 
 (defn-spec post-tweets-to-mastodon any?
   [mastodon-auth masto/mastodon-auth?
+   source twitter/twitter-source?
    target masto/mastodon-target?
    last-post-time any?]
   (fn [error tweets response]
@@ -81,6 +82,7 @@
       (infra/exit-with-error error)
       (->> (infra/js->edn tweets)
            (map twitter/parse-tweet)
+           (map twitter/nitter-url source)
            (map #(intermediate-to-mastodon mastodon-auth target %))
            (masto/post-items mastodon-auth target last-post-time)))))
 
@@ -97,5 +99,6 @@
        account
        (post-tweets-to-mastodon 
         mastodon-auth
+        source
         target
         last-post-time)))))

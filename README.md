@@ -59,13 +59,14 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
             ;; optional keyword filter regexes
             ;; any posts not matching the regexes will be filtered out
             :keyword-filters [".*clojure.*"]
-            ;; Replace Twitter links by Nitter
-            :nitter-urls? false}
+            }
 :transform [{:source {:type :twitter-source
                        ;; optional, defaults to false
                        :include-replies? false
                        ;; optional, defaults to false
                        :include-rts? false
+                       ;; Replace Twitter links by Nitter
+                       :nitter-urls? false
                        ;; accounts you wish to mirror
                        :accounts ["arstechnica" "WIRED"]}
              :target {:type :mastodon-target

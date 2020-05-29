@@ -18,9 +18,11 @@
 
 (s/def ::include-rts? boolean?)
 (s/def ::include-replies? boolean?)
+(s/def ::nitter-urls? boolean?)
 (s/def ::account string?)
 (s/def ::accounts (s/* ::account))
-(def twitter-source?  (s/keys :req-un [::include-rts? ::include-replies? ::accounts]))
+(def twitter-source?  (s/keys :req-un [::include-rts? ::include-replies? ::accounts]
+                              :opt-un [::nitter-urls?]))
 
 (defn-spec twitter-client any?
   [twitter-auth twitter-auth?]
@@ -50,6 +52,12 @@
    :text (chop-tail-media-url text media)
    :screen_name screen_name
    :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
+
+(defn-spec nitter-url map?
+  [source twitter-source?
+   parsed-tweet map?]
+  (when (:nitter-urls? source)
+    (update parsed-tweet :text #(string/replace % #"https://twitter.com" "https://nitter.net"))))
 
 (defn-spec user-timeline any?
   [twitter-auth twitter-auth?
