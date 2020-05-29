@@ -47,15 +47,16 @@
     
     :else text))
 
+; TODO: move this to mastodon-api - seems to belong strongly to mastodon
 (defn-spec intermediate-to-mastodon mastodon-output?
   [mastodon-auth masto/mastodon-auth?
    target masto/mastodon-target?
    input input?]
   (let [{:keys [created-at text media-links screen_name untrimmed-text]} input
-        {:keys [signature]} target
+        {:keys [signature append-screen-name?]} target
         untrimmed (if (some? untrimmed-text)
                     (str " " untrimmed-text) "")
-        sname (if (masto/append-screen-name? mastodon-auth)
+        sname (if (some? append-screen-name?)
                 (str "\n#" screen_name) "")
         signature_text (if (some? signature)
                          (str "\n" signature)

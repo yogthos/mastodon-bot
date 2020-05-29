@@ -29,12 +29,13 @@
 (s/def ::content-filters (s/* ::content-filter))
 (s/def ::keyword-filters (s/* ::keyword-filter))
 (def mastodon-auth? (s/keys :req-un [::account-id ::access_token ::api_url]))
-(def mastodon-target? (s/keys :req-un [
+(def mastodon-target? (s/keys :opt-un [
                                        ;::content-filters ::keyword-filters
                                        ;::max-post-length 
                                        ::signature 
                                        ;::visibility
-                                       ;::append-screen-name? ::sensitive? ::resolve-urls?
+                                       ::append-screen-name? 
+                                       ;::sensitive? ::resolve-urls?
                                        ;::nitter-urls? ::replacements
                                        ]))
 (def mastodon-config? (s/merge mastodon-auth? mastodon-target?))
@@ -47,10 +48,6 @@
 (defn-spec keyword-filter-regexes ::keyword-filters
   [mastodon-config mastodon-config?]
   (mapv re-pattern (:keyword-filters mastodon-config)))
-
-(defn-spec append-screen-name? ::append-screen-name?
-  [mastodon-config mastodon-config?]
-  (boolean (:append-screen-name? mastodon-config)))
 
 (defn-spec max-post-length ::max-post-length
   [mastodon-config mastodon-config?]

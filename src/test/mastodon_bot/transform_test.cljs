@@ -14,4 +14,5 @@
                            :include-rts? true
                            :accounts ["an-twitter-account"]} 
                   :target {:type :mastodon-target
+                           :append-screen-name? true
                            :signature "my-bot"}}])))

@@ -60,9 +60,6 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
             :visibility "unlisted"
             ;; optional limit for the post length
             :max-post-length 300
-            ;; optional flag specifying wether the name of the account
-            ;; will be appended in the post, defaults to false
-            :append-screen-name? false
             ;; optionally try to resolve URLs in posts to skip URL shorteners
             ;; defaults to false
             :resolve-urls? true
@@ -82,6 +79,9 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
                        ;; accounts you wish to mirror
                        :accounts ["arstechnica" "WIRED"]}
              :target {:type :mastodon-target
+                      ;; optional flag specifying wether the name of the account
+                      ;; will be appended in the post, defaults to false
+                      :append-screen-name? false
                       ;; optional signature for posts
                       :signature "#newsbot"}}]
 }
