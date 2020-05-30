@@ -12,9 +12,8 @@
 (s/def ::consumer_secret string?)
 (s/def ::access_token_key string?)
 (s/def ::access_token_secret string?)
-(s/def ::access-keys (s/keys :req-un [::consumer_key ::consumer_secret ::access_token_key 
+(def twitter-auth? (s/keys :req-un [::consumer_key ::consumer_secret ::access_token_key 
                                       ::access_token_secret]))
-(def twitter-auth?  (s/keys :req-un [::access-keys]))
 
 (s/def ::include-rts? boolean?)
 (s/def ::include-replies? boolean?)
