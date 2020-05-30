@@ -27,12 +27,16 @@ If you get a [permission failure](https://github.com/anmonteiro/lumo/issues/206)
 with later timestamps to avoid duplicate posts. On the first run the timestamp will default to current time.
 
 ```clojure
-{;; add Twitter config to mirror Twitter accounts
- :twitter {:access-keys
-           {:consumer_key "XXXX"
-            :consumer_secret "XXXX"
-            :access_token_key "XXXX"
-            :access_token_secret "XXXX"}}
+{:auth {;; add Twitter config to mirror Twitter accounts
+        :twitter {:consumer_key "XXXX"
+                  :consumer_secret "XXXX"
+                  :access_token_key "XXXX"
+                  :access_token_secret "XXXX"}
+        :mastodon {:access_token "XXXX"
+                   ;; account number you see when you log in and go to your profile
+                   ;; e.g: https://mastodon.social/web/accounts/294795
+                   :account-id "XXXX"
+                   :api_url "https://botsin.space/api/v1/"}}
  ;; add Tumblr config to mirror Tumblr accounts
  :tumblr {:access-keys
           {:consumer_key "XXXX"
@@ -45,12 +49,7 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
  ;; add RSS config to follow feeds
  :rss {"Hacker News" "https://hnrss.org/newest"
        "r/Clojure" "https://www.reddit.com/r/clojure/.rss"}
- :mastodon {:access_token "XXXX"
-            ;; account number you see when you log in and go to your profile
-            ;; e.g: https://mastodon.social/web/accounts/294795
-            :account-id "XXXX"
-            :api_url "https://botsin.space/api/v1/"
-            }
+ 
 :transform [{:source {:type :twitter-source
                        ;; optional, defaults to false
                        :include-replies? false

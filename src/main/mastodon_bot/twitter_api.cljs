@@ -26,12 +26,11 @@
 
 (defn-spec twitter-client any?
   [twitter-auth twitter-auth?]
-  (let [{:keys [access-keys]} twitter-auth]
-    (try
-      (twitter. (clj->js access-keys))
-      (catch js/Error e
-        (infra/exit-with-error
-         (str "failed to connect to Twitter: " (.-message e)))))))
+  (try
+    (twitter. (clj->js twitter-auth))
+    (catch js/Error e
+      (infra/exit-with-error
+       (str "failed to connect to Twitter: " (.-message e))))))
 
 (defn strip-utm [news-link]
   (first (string/split news-link #"\?utm")))

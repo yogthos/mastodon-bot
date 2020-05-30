@@ -28,10 +28,7 @@
                                        ::visibility
                                        ::append-screen-name? 
                                        ::sensitive?
-                                       ::media-only?
-                                       ]))
-(def mastodon-config? (s/merge mastodon-auth? mastodon-target?))
-
+                                       ::media-only?]))
 
 (defn-spec max-post-length ::max-post-length
   [target mastodon-target?]
@@ -45,9 +42,9 @@
       (infra/exit-with-error "missing Mastodon auth configuration!")))
 
 (defn-spec delete-status any?
-  [mastodon-config mastodon-config?
+  [mastodon-auth mastodon-auth?
    status-id string?]
-  (.delete (mastodon-client mastodon-config) (str "statuses/" status-id) #js {}))
+  (.delete (mastodon-client mastodon-auth) (str "statuses/" status-id) #js {}))
 
 (defn post-status
   ([mastodon-auth target status-text]

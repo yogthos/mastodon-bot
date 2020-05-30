@@ -13,22 +13,22 @@
    [mastodon-bot.tumblr-api :as tumblr]
    [cljs.core :refer [*command-line-args*]]))
 
-(s/def ::mastodon-auth masto/mastodon-auth?)
-(s/def ::transform transform/transformations?)
+(s/def ::mastodon masto/mastodon-auth?)
 (s/def ::twitter twitter/twitter-auth?)
+(s/def ::transform transform/transformations?)
 (s/def ::tumblr map?)
 (s/def ::rss map?)
+(s/def ::auth (s/keys :opt-un [::mastodon ::twitter]))
+(def config? 
+  (s/keys :req-un [::auth ::transform]))
 
-(def config? (s/keys :req-un [::mastodon-config]
-                     :opt-un [::twitter ::tumblr ::rss]))
-
-(defn-spec mastodon-auth ::mastodon-auth
+(defn-spec mastodon-auth ::mastodon
   [config config?]
-  (:mastodon-config config))
+  (get-in config [:auth :mastodon]))
 
 (defn-spec twitter-auth ::twitter
   [config config?]
-  (:twitter config))
+  (get-in config [:auth :twitter]))
 
 (defn-spec transform ::transform
   [config config?]
