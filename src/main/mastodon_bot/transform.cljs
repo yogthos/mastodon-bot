@@ -26,6 +26,7 @@
 (s/def ::content-filters (s/* ::content-filter))
 (s/def ::keyword-filter string?)
 (s/def ::keyword-filters (s/* ::keyword-filter))
+(s/def ::replacements any?)
 (defmulti source-type :type)
 (defmethod source-type :twitter-source [_]
   (s/merge (s/keys :req-un[::type]) twitter/twitter-source?))
@@ -36,7 +37,7 @@
 (s/def ::target (s/multi-spec target-type ::type))
 
 (s/def ::transformation (s/keys :req-un [::source ::target]
-                                :opt-un [::resolve-urls? ::content-filters ::keyword-filters]))
+                                :opt-un [::resolve-urls? ::content-filters ::keyword-filters ::replacements]))
 (def transformations? (s/* ::transformation))
 
 (defn trim-text [text max-post-length]
@@ -93,6 +94,11 @@
        (when (not-empty (keyword-filter-regexes transformation))
          (empty? (some #(re-find % text) (keyword-filter-regexes transformation)))))))
 
+(defn-spec perform-replacements string?
+  [transformation ::transformation
+   input input?]
+  (update input :text #(reduce-kv string/replace % (:replacements transformation))))
+  
 
 ; TODO: move this to mastodon-api - seems to belong strongly to mastodon
 (defn-spec intermediate-to-mastodon mastodon-output?
@@ -132,6 +138,7 @@
              (remove #(blocked-content? transformation (:text %)))
              (map #(intermediate-resolve-urls resolve-urls? %))
              (map #(twitter/nitter-url source %))
+             (map #(perform-replacements transformation %))
              (map #(intermediate-to-mastodon mastodon-auth target %))
              (masto/post-items mastodon-auth target last-post-time))))))
 

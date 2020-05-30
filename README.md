@@ -84,7 +84,9 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
              :content-filters [".*bannedsite.*"]
              ;; optional keyword filter regexes
              ;; any posts not matching the regexes will be filtered out
-             :keyword-filters [".*clojure.*"]}]
+             :keyword-filters [".*clojure.*"]
+             ;; TODO: Description & example missing here
+             :replacements nil}]
 }
 ```
 

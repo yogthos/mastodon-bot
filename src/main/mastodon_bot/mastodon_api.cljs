@@ -16,7 +16,6 @@
 (s/def ::sensitive? boolean?)
 (s/def ::media-only? boolean?)
 (s/def ::visibility #{"direct" "private" "unlisted" "public"})
-(s/def ::replacements string?)
 (s/def ::max-post-length (fn [n] (and
                                  (int? n)
                                  (<= n 500)
@@ -30,7 +29,6 @@
                                        ::append-screen-name? 
                                        ::sensitive?
                                        ::media-only?
-                                       ;::replacements
                                        ]))
 (def mastodon-config? (s/merge mastodon-auth? mastodon-target?))
 
@@ -38,11 +36,6 @@
 (defn-spec max-post-length ::max-post-length
   [target mastodon-target?]
   (:max-post-length target))
-
-(defn-spec perform-replacements string?
-  [mastodon-config mastodon-config?
-   text string?]
-  (reduce-kv string/replace text (:replacements mastodon-config)))
 
 (defn-spec mastodon-client any?
   [mastodon-auth mastodon-auth?]
@@ -64,8 +57,7 @@
   ([mastodon-auth target status-text media-ids callback]
    (let [{:keys [visibility sensitive?]} target]
      (-> (.post (mastodon-client mastodon-auth) "statuses"
-                (clj->js (merge {:status (->> status-text
-                                             (perform-replacements mastodon-auth))}
+                (clj->js (merge {:status status-text}
                                 (when media-ids {:media_ids media-ids})
                                 (when sensitive? {:sensitive sensitive?})
                                 (when visibility {:visibility visibility}))))
