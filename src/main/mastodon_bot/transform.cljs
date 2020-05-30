@@ -22,6 +22,10 @@
                                :opt-un [::media-links]))
 (s/def ::type keyword?)
 (s/def ::resolve-urls? boolean?)
+(s/def ::content-filter string?)
+(s/def ::content-filters (s/* ::content-filter))
+(s/def ::keyword-filter string?)
+(s/def ::keyword-filters (s/* ::keyword-filter))
 (defmulti source-type :type)
 (defmethod source-type :twitter-source [_]
   (s/merge (s/keys :req-un[::type]) twitter/twitter-source?))
@@ -32,7 +36,7 @@
 (s/def ::target (s/multi-spec target-type ::type))
 
 (s/def ::transformation (s/keys :req-un [::source ::target]
-                                :opt-un [::resolve-urls?]))
+                                :opt-un [::resolve-urls? ::content-filters ::keyword-filters]))
 (def transformations? (s/* ::transformation))
 
 (defn trim-text [text max-post-length]
@@ -73,6 +77,23 @@
   (when resolve-urls?
     (update input :text #(string/replace % shortened-url-pattern resolve-url))))
 
+(defn-spec content-filter-regexes ::content-filters
+  [transformation ::transformation]
+  (mapv re-pattern (:content-filters transformation)))
+
+(defn-spec keyword-filter-regexes ::keyword-filters
+  [transformation ::transformation]
+  (mapv re-pattern (:keyword-filters transformation)))
+
+(defn-spec blocked-content? boolean?
+  [transformation ::transformation
+   text string?]
+  (boolean
+   (or (some #(re-find % text) (content-filter-regexes transformation))
+       (when (not-empty (keyword-filter-regexes transformation))
+         (empty? (some #(re-find % text) (keyword-filter-regexes transformation)))))))
+
+
 ; TODO: move this to mastodon-api - seems to belong strongly to mastodon
 (defn-spec intermediate-to-mastodon mastodon-output?
   [mastodon-auth masto/mastodon-auth?
@@ -100,19 +121,19 @@
 
 (defn-spec post-tweets-to-mastodon any?
   [mastodon-auth masto/mastodon-auth?
-   resolve-urls? ::resolve-urls?
-   source twitter/twitter-source?
-   target masto/mastodon-target?
+   transformation ::transformation
    last-post-time any?]
-  (fn [error tweets response]
-    (if error
-      (infra/exit-with-error error)
-      (->> (infra/js->edn tweets)
-           (map twitter/parse-tweet)
-           (map #(intermediate-resolve-urls resolve-urls? %))
-           (map #(twitter/nitter-url source %))
-           (map #(intermediate-to-mastodon mastodon-auth target %))
-           (masto/post-items mastodon-auth target last-post-time)))))
+  (let [{:keys [source target resolve-urls?]} transformation]
+    (fn [error tweets response]
+      (if error
+        (infra/exit-with-error error)
+        (->> (infra/js->edn tweets)
+             (map twitter/parse-tweet)
+             (remove #(blocked-content? transformation (:text %)))
+             (map #(intermediate-resolve-urls resolve-urls? %))
+             (map #(twitter/nitter-url source %))
+             (map #(intermediate-to-mastodon mastodon-auth target %))
+             (masto/post-items mastodon-auth target last-post-time))))))
 
 (defn-spec tweets-to-mastodon any?
   [mastodon-auth masto/mastodon-auth?
@@ -127,7 +148,5 @@
        account
        (post-tweets-to-mastodon 
         mastodon-auth
-        resolve-urls?
-        source
-        target
+        transformation
         last-post-time)))))

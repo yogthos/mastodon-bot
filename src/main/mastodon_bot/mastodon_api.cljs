@@ -11,8 +11,6 @@
 (s/def ::access_token string?)
 (s/def ::api_url string?)
 (s/def ::account-id string?)
-(s/def ::content-filter string?)
-(s/def ::keyword-filter string?)
 (s/def ::append-screen-name? boolean?)
 (s/def ::signature string?)
 (s/def ::sensitive? boolean?)
@@ -24,12 +22,9 @@
                                  (<= n 500)
                                  (> n 0))))
 
-(s/def ::content-filters (s/* ::content-filter))
-(s/def ::keyword-filters (s/* ::keyword-filter))
+
 (def mastodon-auth? (s/keys :req-un [::account-id ::access_token ::api_url]))
-(def mastodon-target? (s/keys :opt-un [
-                                       ;::content-filters ::keyword-filters
-                                       ::max-post-length 
+(def mastodon-target? (s/keys :opt-un [::max-post-length 
                                        ::signature 
                                        ::visibility
                                        ::append-screen-name? 
@@ -39,14 +34,6 @@
                                        ]))
 (def mastodon-config? (s/merge mastodon-auth? mastodon-target?))
 
-
-(defn-spec content-filter-regexes ::content-filters
-  [mastodon-config mastodon-config?]
-  (mapv re-pattern (:content-filters mastodon-config)))
-
-(defn-spec keyword-filter-regexes ::keyword-filters
-  [mastodon-config mastodon-config?]
-  (mapv re-pattern (:keyword-filters mastodon-config)))
 
 (defn-spec max-post-length ::max-post-length
   [target mastodon-target?]
@@ -63,14 +50,6 @@
        clj->js 
        mastodon.)
       (infra/exit-with-error "missing Mastodon auth configuration!")))
-
-(defn-spec blocked-content? boolean?
-  [mastodon-config mastodon-config?
-   text string?]
- (boolean
-   (or (some #(re-find % text) (content-filter-regexes mastodon-config))
-       (when (not-empty (keyword-filter-regexes mastodon-config))
-             (empty? (some #(re-find % text) (keyword-filter-regexes mastodon-config)))))))
 
 (defn-spec delete-status any?
   [mastodon-config mastodon-config?
@@ -129,7 +108,6 @@
    items any?]
   (doseq [{:keys [text media-links]} 
           (->> items
-               (remove #(blocked-content? mastodon-auth (:text %)))
                (filter #(> (:created-at %) last-post-time)))]
     (if media-links
       (post-status-with-images mastodon-auth target text media-links)

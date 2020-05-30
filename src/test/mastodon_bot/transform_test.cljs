@@ -13,7 +13,7 @@
                            :include-replies? false
                            :include-rts? true
                            :nitter-urls? true
-                           :accounts ["an-twitter-account"]} 
+                           :accounts ["an-twitter-account"]}
                   :target {:type :mastodon-target
                            :append-screen-name? true
                            :media-only? false
@@ -21,4 +21,6 @@
                            :visibility "unlisted"
                            :sensitive? true
                            :signature "my-bot"}
-                  :resolve-urls? true}])))
+                  :resolve-urls? true
+                  :content-filters [".*bannedsite.*"]
+                  :keyword-filters [".*"]}])))

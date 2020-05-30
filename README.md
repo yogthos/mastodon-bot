@@ -50,15 +50,6 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
             ;; e.g: https://mastodon.social/web/accounts/294795
             :account-id "XXXX"
             :api_url "https://botsin.space/api/v1/"
-            ;; optionally try to resolve URLs in posts to skip URL shorteners
-            ;; defaults to false
-            :resolve-urls? true
-            ;; optional content filter regexes
-            ;; any posts matching the regexes will be filtered out
-            :content-filters [".*bannedsite.*"]
-            ;; optional keyword filter regexes
-            ;; any posts not matching the regexes will be filtered out
-            :keyword-filters [".*clojure.*"]
             }
 :transform [{:source {:type :twitter-source
                        ;; optional, defaults to false
@@ -87,7 +78,13 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
                       :signature "#newsbot"}
              ;; optionally try to resolve URLs in posts to skip URL shorteners
              ;; defaults to false
-             :resolve-urls? true}]
+             :resolve-urls? true
+             ;; optional content filter regexes
+             ;; any posts matching the regexes will be filtered out
+             :content-filters [".*bannedsite.*"]
+             ;; optional keyword filter regexes
+             ;; any posts not matching the regexes will be filtered out
+             :keyword-filters [".*clojure.*"]}]
 }
 ```
 
