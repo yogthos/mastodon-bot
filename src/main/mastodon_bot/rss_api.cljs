@@ -17,12 +17,10 @@
 
 (defn parse-feed [payload]
   (for [{:keys [title isoDate pubDate content link]} (:items payload)]
-    (do 
-      (println title)
       {:created-at (js/Date. (or isoDate pubDate))
        :text (str title
                   "\n\n"
-                  link)})))
+                  link)}))
 
 (defn-spec get-feed map?
   [url string?
