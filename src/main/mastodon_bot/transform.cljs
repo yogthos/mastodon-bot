@@ -7,6 +7,7 @@
    [mastodon-bot.infra :as infra]
    [mastodon-bot.mastodon-api :as masto]
    [mastodon-bot.twitter-api :as twitter]
+   [mastodon-bot.rss-api :as rss]
    [mastodon-bot.tumblr-api :as tumblr]
    ["deasync" :as deasync]
    ["request" :as request]))
@@ -98,6 +99,11 @@
   [transformation ::transformation
    input input?]
   (update input :text #(reduce-kv string/replace % (:replacements transformation))))
+
+;TODO: remove in final code
+(defn debug[item]
+  (println item)
+  item)
   
 
 ; TODO: move this to mastodon-api - seems to belong strongly to mastodon
@@ -135,6 +141,7 @@
         (infra/exit-with-error error)
         (->> (infra/js->edn tweets)
              (map twitter/parse-tweet)
+             (filter #(> (:created-at %) last-post-time))
              (remove #(blocked-content? transformation (:text %)))
              (map #(intermediate-resolve-urls resolve-urls? %))
              (map #(twitter/nitter-url source %))
@@ -154,6 +161,37 @@
        source
        account
        (post-tweets-to-mastodon 
+        mastodon-auth
+        transformation
+        last-post-time)))))
+
+(defn-spec post-rss-to-mastodon any?
+  [mastodon-auth masto/mastodon-auth?
+   transformation ::transformation
+   last-post-time any?]
+  (let [{:keys [source target resolve-urls?]} transformation]
+    (fn [payload]
+      (->> (infra/js->edn payload)
+           (map rss/parse-feed)
+           (debug)
+           (filter #(> (:created-at %) last-post-time))
+           (remove #(blocked-content? transformation (:text %)))
+           (map #(intermediate-resolve-urls resolve-urls? %))
+           (map #(twitter/nitter-url source %))
+           (map #(perform-replacements transformation %))
+           (map #(intermediate-to-mastodon mastodon-auth target %))
+           (masto/post-items mastodon-auth target last-post-time)))))
+
+
+(defn-spec rss-to-mastodon any?
+  [mastodon-auth masto/mastodon-auth?
+   transformation ::transformation
+   last-post-time any?]
+  (let [{:keys [source target]} transformation]
+    (doseq [[name url] (:feeds source)]
+      (rss/get-feed
+       url
+       (post-rss-to-mastodon
         mastodon-auth
         transformation
         last-post-time)))))

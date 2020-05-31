@@ -5,7 +5,6 @@
    [clojure.spec.alpha :as s]
    [clojure.spec.test.alpha :as st]
    [orchestra.core :refer-macros [defn-spec]]
-   ["rss-parser" :as rss]
    [mastodon-bot.infra :as infra]
    [mastodon-bot.transform :as transform]
    [mastodon-bot.mastodon-api :as masto]
@@ -70,25 +69,35 @@
      mastodon-auth
      (fn [timeline]
        (let [last-post-time (-> timeline first :created_at (js/Date.))]
-     ;;post from Twitter
-         (when-let [twitter-auth (twitter-auth config)]
-           (let [{:keys [transform]} config]
-             (doseq [transformation transform]
-               (transform/tweets-to-mastodon
-                mastodon-auth
-                twitter-auth
-                transformation
-                last-post-time))))
-     ;;post from Tumblr
-         (when-let [{:keys [access-keys accounts limit]} (:tumblr config)]
-           (doseq [account accounts]
-             (let [client (tumblr/tumblr-client access-keys account)]
-               (.posts client #js {:limit (or limit 5)} (post-tumblrs last-post-time)))))
-     ;;post from RSS
-         (when-let [feeds (some-> config :rss)]
-           (let [parser (rss.)]
-             (doseq [feed feeds]
-               (parse-feed last-post-time parser feed)))))))))
+         (let [{:keys [transform]} config]
+           (doseq [transformation transform]
+             (let [source-type (get-in transformation [:source :type])
+                   target-type (get-in transformation [:target :type])]               
+               (cond
+               ;;post from Twitter
+                 (and (= :twitter-source source-type)
+                      (= :mastodon-target target-type))
+                 (when-let [twitter-auth (twitter-auth config)]
+                   (transform/tweets-to-mastodon
+                    mastodon-auth
+                    twitter-auth
+                    transformation
+                    last-post-time))
+               ;;post from RSS
+                 (and (= :rss-source source-type)
+                      (= :mastodon-target target-type))
+                 (transform/rss-to-mastodon
+                  mastodon-auth
+                  transformation
+                  last-post-time)
+               ;;post from Tumblr
+                 (and (= :tumblr-source source-type)
+                      (= :mastodon-target target-type))
+                 (when-let [{:keys [access-keys accounts limit]} (:tumblr config)]
+                   (doseq [account accounts]
+                     (let [client (tumblr/tumblr-client access-keys account)]
+                       (.posts client #js {:limit (or limit 5)} (post-tumblrs last-post-time)))))))))
+)))))
 
 (set! *main-cli-fn* -main)
 (st/instrument 'mastodon-auth)

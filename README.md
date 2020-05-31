@@ -46,9 +46,6 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
           ;; optional limit for number of posts to retrieve, default: 5
           :limit 10
           :accounts ["cyberpunky.tumblr.com" "scipunk.tumblr.com"]}
- ;; add RSS config to follow feeds
- :rss {"Hacker News" "https://hnrss.org/newest"
-       "r/Clojure" "https://www.reddit.com/r/clojure/.rss"}
  
 :transform [{:source {:type :twitter-source
                        ;; optional, defaults to false
@@ -85,7 +82,16 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
              ;; any posts not matching the regexes will be filtered out
              :keyword-filters [".*clojure.*"]
              ;; TODO: Description & example missing here
-             :replacements nil}]
+             :replacements nil}
+
+             {:source {:type :rss-source
+                       ;; add RSS config to follow feeds
+                       :feeds [["Hacker News" "https://hnrss.org/newest"]
+                               ["r/Clojure" "https://www.reddit.com/r/clojure/.rss"]]}
+             :target {:type :mastodon-target
+                      ...}
+             :resolve-urls? ...}
+             ]
 }
 ```
 
