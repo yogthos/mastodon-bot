@@ -15,8 +15,8 @@
   []
   (rss.))
 
-(defn parse-feed [payload]
-  (for [{:keys [title isoDate pubDate content link]} (:items payload)]
+(defn parse-feed [item]
+  (let [{:keys [title isoDate pubDate content link]} item]
       {:created-at (js/Date. (or isoDate pubDate))
        :text (str title
                   "\n\n"

@@ -172,13 +172,13 @@
   (let [{:keys [source target resolve-urls?]} transformation]
     (fn [payload]
       (->> (infra/js->edn payload)
+           (:items)
            (map rss/parse-feed)
-           (debug)
            (filter #(> (:created-at %) last-post-time))
            (remove #(blocked-content? transformation (:text %)))
            (map #(intermediate-resolve-urls resolve-urls? %))
-           (map #(twitter/nitter-url source %))
            (map #(perform-replacements transformation %))
+           (debug)
            (map #(intermediate-to-mastodon mastodon-auth target %))
            (masto/post-items mastodon-auth target last-post-time)))))
 
