@@ -1,0 +1,9 @@
+{:items [
+    {:title [Blogpost] Idiomatic Clojure: Mixing Parallel Side Effects and Iteration, 
+     :link https://www.reddit.com/r/Clojure/comments/gtz1ox/blogpost_idiomatic_clojure_mixing_parallel_side/, 
+     :pubDate 2020-05-31T13:28:48.000Z, 
+     :author /u/bsless, 
+     :content <!-- SC_OFF --><div class="md"><p><a href="https://bsless.github.io/mapping-parallel-side-effects/">https://bsless.github.io/mapping-parallel-side-effects/</a></p> <p>Followup from <a href="https://bsless.github.io/side-effects/">the previous post</a> where I went over the ways to idiomatically map side effects, this post tackles the same issue in a concurrent context. This one has more code than hand-waving, and you can follow along with all the examples.</p> <p>Would appreciate your feedback. It&#39;s a rather technical post and there may be things I missed or didn&#39;t consider.</p> <p>Cheers</p> </div><!-- SC_ON --> &#32; submitted by &#32; <a href="https://www.reddit.com/user/bsless"> /u/bsless </a> <br/> <span><a href="https://www.reddit.com/r/Cloj
+ure/comments/gtz1ox/blogpost_idiomatic_clojure_mixing_parallel_side/">[link]</a></span> &#32; <span><a href="https://www.reddit.com/r/Clojure/comments/gtz1ox/blogpost_idiomatic_clojure_mixing_parallel_side/">[comments]</a></span>, :contentSnippet https://bsless.github.io/mapping-parallel-side-effects/ Followup from the previous post where I went over the ways to idiomatically map side effects, this post tackles the same issue in a concurrent context. This one has more code than hand-waving, and you can follow along with all the examples. Would appreciate your feedback. It's a rather technical post and there may be things I missed or didn't consider. Cheers    submitted by    /u/bsless   [link]   [comments], 
+     :id t3_gtz1ox, 
+     :isoDate 2020-05-31T13:28:48.000Z} ]
