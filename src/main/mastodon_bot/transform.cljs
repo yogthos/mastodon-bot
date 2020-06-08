@@ -155,7 +155,7 @@
              (map #(twitter/nitter-url source %))
              (map #(perform-replacements transformation %))
              (map #(intermediate-to-mastodon mastodon-auth target %))
-             (masto/post-items mastodon-auth target last-post-time))))))
+             (masto/post-items mastodon-auth target))))))
 
 (defn-spec tweets-to-mastodon any?
   [mastodon-auth masto/mastodon-auth?
@@ -188,7 +188,7 @@
              (remove #(blocked-content? transformation (:text %)))
              (map #(perform-replacements transformation %))
              (map #(intermediate-to-mastodon mastodon-auth target %))
-             (masto/post-items mastodon-auth target last-post-time))))))
+             (masto/post-items mastodon-auth target))))))
 
 (defn-spec tumblr-to-mastodon any?
   [mastodon-auth masto/mastodon-auth?
@@ -221,7 +221,7 @@
            (map #(intermediate-resolve-urls resolve-urls? %))
            (map #(perform-replacements transformation %))
            (map #(intermediate-to-mastodon mastodon-auth target %))
-           (masto/post-items mastodon-auth target last-post-time)))))
+           (masto/post-items mastodon-auth target)))))
 
 
 (defn-spec rss-to-mastodon any?

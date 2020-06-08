@@ -93,11 +93,8 @@
 (defn-spec post-items any?
   [mastodon-auth mastodon-auth?
    target mastodon-target?
-   last-post-time any?
    items any?]
-  (doseq [{:keys [text media-links]} 
-          (->> items
-               (filter #(> (:created-at %) last-post-time)))]
+  (doseq [{:keys [text media-links]} items]
     (if media-links
       (post-status-with-images mastodon-auth target text media-links)
       (when-not (:media-only? target)
