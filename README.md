@@ -51,7 +51,7 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
                        :nitter-urls? false
                        ;; accounts you wish to mirror
                        :accounts ["arstechnica" "WIRED"]}
-             :target {:target-type :mastodon-target
+             :target {:target-type :mastodon
                       ;; optional flag specifying wether the name of the account
                       ;; will be appended in the post, defaults to false
                       :append-screen-name? false
@@ -83,7 +83,7 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
                        ;; add RSS config to follow feeds
                        :feeds [["Hacker News" "https://hnrss.org/newest"]
                                ["r/Clojure" "https://www.reddit.com/r/clojure/.rss"]]}
-             :target {:target-type :mastodon-target
+             :target {:target-type :mastodon
                       ...}
              :resolve-urls? ...}
 
@@ -91,9 +91,9 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
                        ;; optional limit for number of posts to retrieve, default: 5
                        :limit 10
                        :accounts ["cyberpunky.tumblr.com" "scipunk.tumblr.com"]
-             :target {:target-type :mastodon-target
+             :target {:target-type :mastodon
                       ...}
-             :resolve-urls? ...}
+             :resolve-urls? ...}}
              ]
 }
 ```
