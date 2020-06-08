@@ -36,18 +36,13 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
                    ;; account number you see when you log in and go to your profile
                    ;; e.g: https://mastodon.social/web/accounts/294795
                    :account-id "XXXX"
-                   :api_url "https://botsin.space/api/v1/"}}
- ;; add Tumblr config to mirror Tumblr accounts
- :tumblr {:access-keys
-          {:consumer_key "XXXX"
-           :consumer_secret "XXXX"
-           :token "XXXX"
-           :token_secret "XXXX"}
-          ;; optional limit for number of posts to retrieve, default: 5
-          :limit 10
-          :accounts ["cyberpunky.tumblr.com" "scipunk.tumblr.com"]}
+                   :api_url "https://botsin.space/api/v1/"}
+        :tumblr {:consumer_key "XXXX"
+                 :consumer_secret "XXXX"
+                 :token "XXXX"
+                 :token_secret "XXXX"}}
  
-:transform [{:source {:type :twitter-source
+:transform [{:source {:source-type :twitter
                        ;; optional, defaults to false
                        :include-replies? false
                        ;; optional, defaults to false
@@ -56,7 +51,7 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
                        :nitter-urls? false
                        ;; accounts you wish to mirror
                        :accounts ["arstechnica" "WIRED"]}
-             :target {:type :mastodon-target
+             :target {:target-type :mastodon-target
                       ;; optional flag specifying wether the name of the account
                       ;; will be appended in the post, defaults to false
                       :append-screen-name? false
@@ -84,11 +79,19 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
              ;; TODO: Description & example missing here
              :replacements nil}
 
-             {:source {:type :rss-source
+             {:source {:source-type :rss
                        ;; add RSS config to follow feeds
                        :feeds [["Hacker News" "https://hnrss.org/newest"]
                                ["r/Clojure" "https://www.reddit.com/r/clojure/.rss"]]}
-             :target {:type :mastodon-target
+             :target {:target-type :mastodon-target
+                      ...}
+             :resolve-urls? ...}
+
+             {:source {:source-type :tumblr
+                       ;; optional limit for number of posts to retrieve, default: 5
+                       :limit 10
+                       :accounts ["cyberpunky.tumblr.com" "scipunk.tumblr.com"]
+             :target {:target-type :mastodon-target
                       ...}
              :resolve-urls? ...}
              ]

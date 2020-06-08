@@ -8,7 +8,21 @@
    ["tumblr" :as tumblr]
    ))
 
-(defn tumblr-client [access-keys account]
+(s/def ::consumer_key string?)
+(s/def ::consumer_secret string?)
+(s/def ::token string?)
+(s/def ::token_secret string?)
+(def tumblr-auth? (s/keys :req-un [::consumer_key ::consumer_secret ::token
+                                    ::token_secret]))
+
+(s/def ::limit pos?)
+(s/def ::account string?)
+(s/def ::accounts (s/* ::account))
+(def tumblr-source?  (s/keys :req-un [::limit ::accounts]))
+
+(defn-spec tumblr-client any?
+  [access-keys tumblr-auth?
+   account string?]
   (try
     (tumblr/Blog. account (clj->js access-keys))
     (catch js/Error e

@@ -14,10 +14,9 @@
 
 (s/def ::mastodon masto/mastodon-auth?)
 (s/def ::twitter twitter/twitter-auth?)
+(s/def ::tumblr tumblr/tumblr-auth?)
 (s/def ::transform transform/transformations?)
-(s/def ::tumblr map?)
-(s/def ::rss map?)
-(s/def ::auth (s/keys :opt-un [::mastodon ::twitter]))
+(s/def ::auth (s/keys :opt-un [::mastodon ::twitter ::tumblr]))
 (def config? 
   (s/keys :req-un [::auth ::transform]))
 
@@ -29,39 +28,15 @@
   [config config?]
   (get-in config [:auth :twitter]))
 
+(defn-spec tumblr-auth ::tumblr
+  [config config?]
+  (get-in config [:auth :tumblr]))
+
 (defn-spec transform ::transform
   [config config?]
   (:transform config))
 
 (def config (infra/load-config))
-
-(defn post-tumblrs [last-post-time]
-  (fn [err response]
-    (->> response
-         infra/js->edn
-         :posts
-         (mapv tumblr/parse-tumblr-post)
-         (map #(transform/intermediate-to-mastodon
-                (mastodon-auth config)
-                ;todo: fix this
-                (:target (first (transform config))) %))
-         (masto/post-items 
-          (mastodon-auth config)
-          (:target (first (transform config)))
-          last-post-time))))
-
-(defn parse-feed [last-post-time parser [title url]]
-  (-> (.parseURL parser url)
-      (.then #(masto/post-items
-               (mastodon-auth config)
-               (:target (first (transform config)))
-               last-post-time
-               (for [{:keys [title isoDate pubDate content link]} (-> % infra/js->edn :items)]
-                 {:created-at (js/Date. (or isoDate pubDate))
-                  :text (str (transform/trim-text
-                              title
-                              (masto/max-post-length (:target (first (transform config))))) 
-                             "\n\n" (twitter/strip-utm link))})))))
 
 (defn -main []
   (let [mastodon-auth (mastodon-auth config)]
@@ -71,12 +46,12 @@
        (let [last-post-time (-> timeline first :created_at (js/Date.))]
          (let [{:keys [transform]} config]
            (doseq [transformation transform]
-             (let [source-type (get-in transformation [:source :type])
-                   target-type (get-in transformation [:target :type])]               
+             (let [source-type (get-in transformation [:source :source-type])
+                   target-type (get-in transformation [:target :target-type])]               
                (cond
                ;;post from Twitter
-                 (and (= :twitter-source source-type)
-                      (= :mastodon-target target-type))
+                 (and (= :twitter source-type)
+                      (= :mastodon target-type))
                  (when-let [twitter-auth (twitter-auth config)]
                    (transform/tweets-to-mastodon
                     mastodon-auth
@@ -84,19 +59,22 @@
                     transformation
                     last-post-time))
                ;;post from RSS
-                 (and (= :rss-source source-type)
-                      (= :mastodon-target target-type))
+                 (and (= :rss source-type)
+                      (= :mastodon target-type))
                  (transform/rss-to-mastodon
                   mastodon-auth
                   transformation
                   last-post-time)
                ;;post from Tumblr
-                 (and (= :tumblr-source source-type)
-                      (= :mastodon-target target-type))
-                 (when-let [{:keys [access-keys accounts limit]} (:tumblr config)]
-                   (doseq [account accounts]
-                     (let [client (tumblr/tumblr-client access-keys account)]
-                       (.posts client #js {:limit (or limit 5)} (post-tumblrs last-post-time)))))))))
+                 (and (= :tumblr source-type)
+                      (= :mastodon target-type))
+                 (when-let [tumblr-auth (tumblr-auth config)]
+                   (transform/tumblr-to-mastodon
+                    mastodon-auth
+                    tumblr-auth
+                    transformation
+                    last-post-time))
+                 ))))
 )))))
 
 (set! *main-cli-fn* -main)

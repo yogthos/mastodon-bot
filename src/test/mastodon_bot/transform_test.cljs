@@ -9,12 +9,12 @@
   (is (s/valid? sut/transformations?
                 []))
   (is (s/valid? sut/transformations?
-                [{:source {:type :twitter-source
+                [{:source {:source-type :twitter
                            :include-replies? false
                            :include-rts? true
                            :nitter-urls? true
                            :accounts ["an-twitter-account"]}
-                  :target {:type :mastodon-target
+                  :target {:target-type :mastodon
                            :append-screen-name? true
                            :media-only? false
                            :max-post-length 500

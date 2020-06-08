@@ -21,21 +21,27 @@
                      :opt-un [::media-links ::untrimmed-text]))
 (def mastodon-output?  (s/keys :req-un [::created-at ::text]
                                :opt-un [::media-links]))
-(s/def ::type keyword?)
+(s/def ::source-type #{:twitter :rss :tumblr})
 (s/def ::resolve-urls? boolean?)
 (s/def ::content-filter string?)
 (s/def ::content-filters (s/* ::content-filter))
 (s/def ::keyword-filter string?)
 (s/def ::keyword-filters (s/* ::keyword-filter))
 (s/def ::replacements any?)
-(defmulti source-type :type)
-(defmethod source-type :twitter-source [_]
-  (s/merge (s/keys :req-un[::type]) twitter/twitter-source?))
-(s/def ::source (s/multi-spec source-type ::type))
-(defmulti target-type :type)
-(defmethod target-type :mastodon-target [_]
-  (s/merge (s/keys :req-un [::type]) masto/mastodon-target?))
-(s/def ::target (s/multi-spec target-type ::type))
+(defmulti source-type :source-type)
+(defmethod source-type :twitter [_]
+  (s/merge (s/keys :req-un[::source-type]) twitter/twitter-source?))
+(defmethod source-type :rss [_]
+  (s/merge (s/keys :req-un [::source-type]) rss/rss-source?))
+(defmethod source-type :tumblr [_]
+  (s/merge (s/keys :req-un [::source-type]) tumblr/tumblr-source?))
+(s/def ::source (s/multi-spec source-type ::source-type))
+
+(s/def ::target-type #{:mastodon})
+(defmulti target-type :target-type)
+(defmethod target-type :mastodon [_]
+  (s/merge (s/keys :req-un [::target-type]) masto/mastodon-target?))
+(s/def ::target (s/multi-spec target-type ::target-type))
 
 (s/def ::transformation (s/keys :req-un [::source ::target]
                                 :opt-un [::resolve-urls? ::content-filters ::keyword-filters ::replacements]))
@@ -129,6 +135,7 @@
                 untrimmed
                 sname
                 signature_text)
+     :reblogged true
      :media-links media-links}))
 
 (defn-spec post-tweets-to-mastodon any?
@@ -140,6 +147,7 @@
       (if error
         (infra/exit-with-error error)
         (->> (infra/js->edn tweets)
+             (debug)
              (map twitter/parse-tweet)
              (filter #(> (:created-at %) last-post-time))
              (remove #(blocked-content? transformation (:text %)))
@@ -165,6 +173,40 @@
         transformation
         last-post-time)))))
 
+(defn-spec post-tumblr-to-mastodon any?
+  [mastodon-auth masto/mastodon-auth?
+   transformation ::transformation
+   last-post-time any?]
+  (let [{:keys [source target resolve-urls?]} transformation]
+    (fn [error tweets response]
+      (if error
+        (infra/exit-with-error error)
+        (->> (infra/js->edn tweets)
+             :posts
+             (mapv tumblr/parse-tumblr-post)
+             (filter #(> (:created-at %) last-post-time))             
+             (remove #(blocked-content? transformation (:text %)))
+             (map #(perform-replacements transformation %))
+             (map #(intermediate-to-mastodon mastodon-auth target %))
+             (masto/post-items mastodon-auth target last-post-time))))))
+
+(defn-spec tumblr-to-mastodon any?
+  [mastodon-auth masto/mastodon-auth?
+   tumblr-auth tumblr/tumblr-auth?
+   transformation ::transformation
+   last-post-time any?]
+  (let [{:keys [accounts limit]} transformation]
+    (doseq [account accounts]
+      (let [client (tumblr/tumblr-client tumblr-auth account)]
+        (.posts client 
+                #js {:limit (or limit 5)}
+                (post-tumblr-to-mastodon
+                 mastodon-auth
+                 transformation
+                 last-post-time)
+                )))))
+
+
 (defn-spec post-rss-to-mastodon any?
   [mastodon-auth masto/mastodon-auth?
    transformation ::transformation
@@ -178,7 +220,6 @@
            (remove #(blocked-content? transformation (:text %)))
            (map #(intermediate-resolve-urls resolve-urls? %))
            (map #(perform-replacements transformation %))
-           (debug)
            (map #(intermediate-to-mastodon mastodon-auth target %))
            (masto/post-items mastodon-auth target last-post-time)))))
 
