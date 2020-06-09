@@ -22,10 +22,10 @@
     "mastodon_bot/*"
   ],
   "scripts": {
-    "start": "./mastodon_bot/core.cljs",
-    "test": "MASTODON_BOT_CONFIG=test.edn ./mastodon_bot/core_test.cljs"
+    "start": "./src/main/mastodon_bot/core.cljs",
+    "test": "MASTODON_BOT_CONFIG=test.edn ./src/test/mastodon_bot/core_test.cljs"
   },
   "bin": {
-    "mastodon-bot": "mastodon_bot/core.cljs"
+    "mastodon-bot": "src/main/mastodon_bot/core.cljs"
   }
 }
