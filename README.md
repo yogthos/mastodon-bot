@@ -23,7 +23,7 @@ If you get a [permission failure](https://github.com/anmonteiro/lumo/issues/206)
 * create a Tumblr API key following the instructions [here](http://www.developerdrive.com/2014/05/how-to-get-started-with-the-tumblr-api-part-1/)
 * create a file called `config.edn` with the following contents:
 
-**NOTE**: the bot checks the specified Mastodon account to see the timestamp of the last post, and only posts content
+**NOTE**: the bot checks the specified Mastodon account to see the timestamp of the last post, and only posts content 
 with later timestamps to avoid duplicate posts. On the first run the timestamp will default to current time.
 
 ```clojure
@@ -99,6 +99,8 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
 ```
 
 * the bot looks for `config.edn` at its relative path by default, an alternative location can be specified either using the `MASTODON_BOT_CONFIG` environment variable or passing the path to config as an argument
+
+* transformations have source `(s/def ::source-type #{:twitter :rss :tumblr})` und target `(s/def ::target-type #{:mastodon})` you can combine freely. Multiple transformations for same source-target combination are possible. Source and targets refer to the auth section for their credentials.
 
 * run the bot: `npm start`
 * to poll at intervals setup a cron job such as:
