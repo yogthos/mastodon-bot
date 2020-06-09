@@ -19,7 +19,7 @@
     "lib": "."
   },
   "files": [
-    "mastodon_bot/*"
+    "src/mastodon_bot/*"
   ],
   "scripts": {
     "start": "./src/main/mastodon_bot/core.cljs",
