@@ -147,7 +147,6 @@
       (if error
         (infra/exit-with-error error)
         (->> (infra/js->edn tweets)
-             (debug)
              (map twitter/parse-tweet)
              (filter #(> (:created-at %) last-post-time))
              (remove #(blocked-content? transformation (:text %)))
