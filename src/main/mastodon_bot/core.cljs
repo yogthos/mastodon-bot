@@ -40,7 +40,7 @@
   [config config?]
   (:transform config))
 
-(defn -main [{:keys [options config-location] :as args}]
+(defn transform! [config-location]
   (let [config (infra/load-config config-location)
         mastodon-auth (mastodon-auth config)]
     (masto/get-mastodon-timeline
@@ -85,7 +85,19 @@
     (if (= ::s/invalid parsed-args)
       (do (s/explain ::args args)
           (infra/exit-with-error "Bad commandline arguments"))
-      (-main parsed-args))))
+      (let [{:keys [options config-location]} parsed-args]
+        (cond
+          (some #(= "-h" %) options)
+          (print "usage:
+                  
+                  node target/mastodon-bot.js [-h] /path/to/config.edn 
+                  
+                  or
+                  
+                  npm start [-h] /path/to/config.edn
+                  ")
+          :default          
+          (transform! config-location))))))
 
 (st/instrument 'mastodon-auth)
 (st/instrument 'twitter-auth)
