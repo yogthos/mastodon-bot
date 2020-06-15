@@ -1,16 +1,14 @@
-#!/usr/bin/env lumo
-
 (ns mastodon-bot.core
   (:require
    [clojure.spec.alpha :as s]
    [clojure.spec.test.alpha :as st]
+   [clojure.string :as cs]
    [orchestra.core :refer-macros [defn-spec]]
    [mastodon-bot.infra :as infra]
    [mastodon-bot.transform :as transform]
    [mastodon-bot.mastodon-api :as masto]
    [mastodon-bot.twitter-api :as twitter]
-   [mastodon-bot.tumblr-api :as tumblr]
-   [cljs.core :refer [*command-line-args*]]))
+   [mastodon-bot.tumblr-api :as tumblr]))
 
 (s/def ::mastodon masto/mastodon-auth?)
 (s/def ::twitter twitter/twitter-auth?)
@@ -19,6 +17,12 @@
 (s/def ::auth (s/keys :opt-un [::mastodon ::twitter ::tumblr]))
 (def config? 
   (s/keys :req-un [::auth ::transform]))
+
+(s/def ::options (s/* #{"-h"}))
+(s/def ::config-location (s/? (s/and string?
+                                     #(not (cs/starts-with? % "-")))))
+(s/def ::args (s/cat :options ::options 
+                     :config-location ::config-location))
 
 (defn-spec mastodon-auth ::mastodon
   [config config?]
@@ -36,10 +40,9 @@
   [config config?]
   (:transform config))
 
-(def config (infra/load-config))
-
-(defn -main []
-  (let [mastodon-auth (mastodon-auth config)]
+(defn -main [{:keys [options config-location] :as args}]
+  (let [config (infra/load-config config-location)
+        mastodon-auth (mastodon-auth config)]
     (masto/get-mastodon-timeline
      mastodon-auth
      (fn [timeline]
@@ -77,7 +80,13 @@
                  ))))
 )))))
 
-(set! *main-cli-fn* -main)
+(defn main [& args]
+  (let [parsed-args (s/conform ::args args)]
+    (if (= ::s/invalid parsed-args)
+      (do (s/explain ::args args)
+          (infra/exit-with-error "Bad commandline arguments"))
+      (-main parsed-args))))
+
 (st/instrument 'mastodon-auth)
 (st/instrument 'twitter-auth)
 (st/instrument 'transform)

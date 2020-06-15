@@ -10,13 +10,16 @@
   (js/console.error error)
   (js/process.exit 1))
 
-(defn find-config []
-  (let [config (or (first *command-line-args*)
+(defn find-config [config-location]
+  (let [config (or config-location
                    (-> js/process .-env .-MASTODON_BOT_CONFIG)
                    "config.edn")]
     (if (fs/existsSync config)
       config
       (exit-with-error (str "failed to read config: " config)))))
 
-(defn load-config []
-  (-> (find-config) (fs/readFileSync #js {:encoding "UTF-8"}) edn/read-string))
+(defn load-config [config-location]
+  (-> config-location
+      (find-config)
+      (fs/readFileSync #js {:encoding "UTF-8"})
+      edn/read-string))
