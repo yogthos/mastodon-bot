@@ -8,7 +8,7 @@
    ))
 
 (s/def ::feed (s/cat :name string? :url string?))
-(s/def ::feeds (s/* ::feed))
+(s/def ::feeds (s/coll-of ::feed))
 (def rss-source?  (s/keys :req-un [::feeds]))
 
 (defn-spec rss-client any?
