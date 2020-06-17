@@ -1,4 +1,4 @@
-(ns mastodon-bot.transform_test
+(ns mastodon-bot.transform-test
   (:require
    [cljs.test :refer-macros [deftest is testing run-tests]]
    [clojure.spec.alpha :as s]
