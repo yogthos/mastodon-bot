@@ -4,11 +4,14 @@
    [clojure.spec.test.alpha :as st]
    [clojure.string :as cs]
    [orchestra.core :refer-macros [defn-spec]]
+   [expound.alpha :as expound]
    [mastodon-bot.infra :as infra]
    [mastodon-bot.transform :as transform]
    [mastodon-bot.mastodon-api :as masto]
    [mastodon-bot.twitter-api :as twitter]
    [mastodon-bot.tumblr-api :as tumblr]))
+
+(set! s/*explain-out* expound/printer)
 
 (s/def ::mastodon masto/mastodon-auth?)
 (s/def ::twitter twitter/twitter-auth?)
@@ -40,9 +43,9 @@
   [config config?]
   (:transform config))
 
-(defn transform! [config-location]
-  (let [config (infra/load-config config-location)
-        mastodon-auth (mastodon-auth config)]
+(defn-spec transform! any?
+  [config config?]
+  (let [mastodon-auth (mastodon-auth config)]  
     (masto/get-mastodon-timeline
      mastodon-auth
      (fn [timeline]
@@ -80,24 +83,31 @@
                  ))))
 )))))
 
+(def usage
+  "usage:
+                  
+  node target/mastodon-bot.js [-h] /path/to/config.edn 
+  
+  or
+  
+  npm start [-h] /path/to/config.edn
+  ")
+
 (defn main [& args]
   (let [parsed-args (s/conform ::args args)]
     (if (= ::s/invalid parsed-args)
       (do (s/explain ::args args)
-          (infra/exit-with-error "Bad commandline arguments"))
+          (infra/exit-with-error (str "Bad commandline arguments\n" usage)))
       (let [{:keys [options config-location]} parsed-args]
         (cond
           (some #(= "-h" %) options)
-          (print "usage:
-                  
-                  node target/mastodon-bot.js [-h] /path/to/config.edn 
-                  
-                  or
-                  
-                  npm start [-h] /path/to/config.edn
-                  ")
-          :default          
-          (transform! config-location))))))
+          (print usage)
+          :default
+          (let [config (infra/load-config config-location)]
+            (when (not (s/valid? config? config))
+              (s/explain config? config)
+              (infra/exit-with-error "Bad configuration"))
+            (transform! config)))))))
 
 (st/instrument 'mastodon-auth)
 (st/instrument 'twitter-auth)

@@ -1,6 +1,7 @@
 {:source-paths ["src/main"
                 "src/test"]
- :dependencies [[orchestra "2018.12.06-2"]]
+ :dependencies [[orchestra "2019.02.06-1"]
+                [expound "0.8.4"]]
  :builds       {:dev {:target       :node-library
                       :output-to    "target/node-lib.js"
                       :exports   {:infra mastodon-bot.core/main}
