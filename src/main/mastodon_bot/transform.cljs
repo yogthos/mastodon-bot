@@ -17,8 +17,9 @@
 (s/def ::untrimmed-text string?)
 (s/def ::media-links string?)
 (s/def ::screen_name string?)
-(def input?  (s/keys :req-un [::created-at ::text ::screen_name]
+(def intermediate?  (s/keys :req-un [::created-at ::text ::screen_name]
                      :opt-un [::media-links ::untrimmed-text]))
+
 (def mastodon-output?  (s/keys :req-un [::created-at ::text]
                                :opt-un [::media-links]))
 (s/def ::source-type #{:twitter :rss :tumblr})
@@ -79,9 +80,9 @@
 
 (def shortened-url-pattern #"(https?://)?(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)(?:\.(?:[a-z\u00a1-\uffff0-9]-*)*[a-z\u00a1-\uffff0-9]+)*(?:\.(?:[a-z\u00a1-\uffff]{2,}))\.?)(?::\d{2,5})?(?:[/?#]\S*)?")
 
-(defn-spec intermediate-resolve-urls string?
+(defn-spec intermediate-resolve-urls intermediate?
   [resolve-urls? ::resolve-urls?
-   input input?]
+   input intermediate?]
   (if resolve-urls?
     (update input :text #(string/replace % shortened-url-pattern resolve-url))
     input))
@@ -102,22 +103,22 @@
        (when (not-empty (keyword-filter-regexes transformation))
          (empty? (some #(re-find % text) (keyword-filter-regexes transformation)))))))
 
-(defn-spec perform-replacements string?
+(defn-spec perform-replacements intermediate?
   [transformation ::transformation
-   input input?]
+   input intermediate?]
   (update input :text #(reduce-kv string/replace % (:replacements transformation))))
 
 
 ; TODO: move this to mastodon-api - seems to belong strongly to mastodon
 (defn-spec intermediate-to-mastodon mastodon-output?
   [target masto/mastodon-target?
-   input input?]
+   input intermediate?]
   (let [{:keys [created-at text media-links screen_name untrimmed-text]} input
         {:keys [signature append-screen-name?]} target
         untrimmed (if (some? untrimmed-text)
                     (str " " untrimmed-text) "")
-        sname (if (some? append-screen-name?)
-                (str "\n#" screen_name) "")
+        sname (if append-screen-name?
+                  (str "\n#" screen_name) "")
         signature_text (if (some? signature)
                          (str "\n" signature)
                          "")
