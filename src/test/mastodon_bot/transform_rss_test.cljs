@@ -8,8 +8,17 @@
 (def intermediate-rss-item {:created-at #inst "2020-06-26T12:17:33.000-00:00"
                             :text "Taking Theatre Online with WebGL and WebRTC\n\nhttps://chrisuehlinger.com/blog/2020/06/16/unshattering-the-audience-building-theatre-on-the-web-in-2020/"})
 
-(deftest should-resolve-urls
+(deftest should-not-resolve-urls
   (is (= {:created-at #inst "2020-06-26T12:17:33.000-00:00"
           :text "Taking Theatre Online with WebGL and WebRTC\n\nhttps://chrisuehlinger.com/blog/2020/06/16/unshattering-the-audience-building-theatre-on-the-web-in-2020/"}
-         (sut/intermediate-resolve-urls false intermediate-rss-item)))
-  )
+         (sut/intermediate-resolve-urls false intermediate-rss-item))))
+
+(deftest should-not-trim 
+  (is (= {:created-at #inst "2020-06-26T12:17:33.000-00:00", 
+          :text "Taking Theatre Online with WebGL and WebRTC\n\nhttps://chrisuehlinger.com/blog/2020/06/16/unshattering-the-audience-building-theatre-on-the-web-in-2020/\n#\n#rssbot", 
+          :reblogged true, :media-links nil}
+         (sut/intermediate-to-mastodon {:target-type :mastodon
+                                        :append-screen-name? false
+                                        :max-post-length 500
+                                        :signature "#rssbot"} 
+                                       intermediate-rss-item))))

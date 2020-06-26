@@ -110,8 +110,7 @@
 
 ; TODO: move this to mastodon-api - seems to belong strongly to mastodon
 (defn-spec intermediate-to-mastodon mastodon-output?
-  [mastodon-auth masto/mastodon-auth?
-   target masto/mastodon-target?
+  [target masto/mastodon-target?
    input input?]
   (let [{:keys [created-at text media-links screen_name untrimmed-text]} input
         {:keys [signature append-screen-name?]} target
@@ -149,7 +148,7 @@
              (map #(intermediate-resolve-urls resolve-urls? %))
              (map #(twitter/nitter-url source %))
              (map #(perform-replacements transformation %))
-             (map #(intermediate-to-mastodon mastodon-auth target %))
+             (map #(intermediate-to-mastodon target %))
              (masto/post-items mastodon-auth target))))))
 
 (defn-spec tweets-to-mastodon any?
@@ -182,7 +181,7 @@
              (filter #(> (:created-at %) last-post-time))             
              (remove #(blocked-content? transformation (:text %)))
              (map #(perform-replacements transformation %))
-             (map #(intermediate-to-mastodon mastodon-auth target %))
+             (map #(intermediate-to-mastodon target %))
              (masto/post-items mastodon-auth target))))))
 
 (defn-spec tumblr-to-mastodon any?
@@ -214,9 +213,9 @@
            (filter #(> (:created-at %) last-post-time))
            (remove #(blocked-content? transformation (:text %)))
            (map #(intermediate-resolve-urls resolve-urls? %))
-           (infra/debug-first)
            (map #(perform-replacements transformation %))
-           (map #(intermediate-to-mastodon mastodon-auth target %))
+           (map #(intermediate-to-mastodon target %))
+           (infra/debug-first)
            (masto/post-items mastodon-auth target)))))
 
 
