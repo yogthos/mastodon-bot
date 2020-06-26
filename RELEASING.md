@@ -2,18 +2,20 @@
 
 ## dev release
 ```
-shadow-cljs watch test
+shadow-cljs compile test
+
 shadow-cljs release app
 mkdir target/npm-build
 cp mastodon-bot.js target/npm-build/
 cp README.md target/npm-build/
 tar -c -C target/npm-build -f target/npm-build.tar .
+
 npm publish ./target/npm-build.tar --access public --tag dev0
 ```
 
 ## prod release (should be done from master)
 ```
-shadow-cljs watch test
+shadow-cljs compile test
 
 #adjust version
 vi shadow-cljs.edn
