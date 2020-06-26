@@ -1,6 +1,7 @@
 # can be used for travis build config et al config
 
 #shadow-cljs do-something test
+
 shadow-cljs release app
 mkdir target/npm-build
 cp mastodon-bot.js target/npm-build/

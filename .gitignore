@@ -1,4 +1,5 @@
 config.edn
+config*.edn
 package-lock.json
 /.shadow-cljs
 /node_modules
