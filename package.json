@@ -21,9 +21,6 @@
   "scripts": {
     "start": "node mastodon-bot.js"
   },
-  "bin": {
-    "mastodon-bot": "mastodon-bot.js"
-  },
   "keywords": [
     "cljs",
     "mastodon",
