@@ -82,8 +82,9 @@
 (defn-spec intermediate-resolve-urls string?
   [resolve-urls? ::resolve-urls?
    input input?]
-  (when resolve-urls?
-    (update input :text #(string/replace % shortened-url-pattern resolve-url))))
+  (if resolve-urls?
+    (update input :text #(string/replace % shortened-url-pattern resolve-url))
+    input))
 
 (defn-spec content-filter-regexes ::content-filters
   [transformation ::transformation]
@@ -106,11 +107,6 @@
    input input?]
   (update input :text #(reduce-kv string/replace % (:replacements transformation))))
 
-;TODO: remove in final code
-(defn debug[item]
-  (println item)
-  item)
-  
 
 ; TODO: move this to mastodon-api - seems to belong strongly to mastodon
 (defn-spec intermediate-to-mastodon mastodon-output?
@@ -218,6 +214,7 @@
            (filter #(> (:created-at %) last-post-time))
            (remove #(blocked-content? transformation (:text %)))
            (map #(intermediate-resolve-urls resolve-urls? %))
+           (infra/debug-first)
            (map #(perform-replacements transformation %))
            (map #(intermediate-to-mastodon mastodon-auth target %))
            (masto/post-items mastodon-auth target)))))

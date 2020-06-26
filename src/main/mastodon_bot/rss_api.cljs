@@ -11,11 +11,21 @@
 (s/def ::feeds (s/coll-of ::feed))
 (def rss-source?  (s/keys :req-un [::feeds]))
 
+(s/def ::title string?)
+(s/def ::content string?)
+(s/def ::link string?)
+(s/def ::author string?)
+(s/def ::isoDate string?)
+(s/def ::pubDate string?)
+(s/def ::feed-item (s/keys :req-un [::title ::content ::link]
+                           :opt-un [::author ::isoDate ::pubDate]))
+
 (defn-spec rss-client any?
   []
   (rss.))
 
-(defn parse-feed [item]
+(defn-spec parse-feed any?
+  [item ::feed-item]  
   (let [{:keys [title isoDate pubDate content link]} item]
       {:created-at (js/Date. (or isoDate pubDate))
        :text (str title

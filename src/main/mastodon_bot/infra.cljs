@@ -1,7 +1,16 @@
 (ns mastodon-bot.infra
   (:require
    [cljs.reader :as edn]
+   [clojure.pprint :refer [pprint]]
    ["fs" :as fs]))
+
+(defn debug [item]
+  (pprint item)
+  item)
+
+(defn debug-first [item]
+  (pprint (first item))
+  item)
 
 (defn js->edn [data]
   (js->clj data :keywordize-keys true))
