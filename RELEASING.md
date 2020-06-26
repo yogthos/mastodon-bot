@@ -11,7 +11,7 @@ tar -c -C target/npm-build -f target/npm-build.tar .
 npm publish ./target/npm-build.tar --access public --tag dev0
 ```
 
-## prod release
+## prod release (should be done from master)
 ```
 shadow-cljs watch test
 
