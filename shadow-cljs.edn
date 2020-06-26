@@ -4,7 +4,6 @@
                 [expound "0.8.4"]]
  :builds       {:test {:target    :node-test
                        :output-to "target/node-tests.js"
-                       :ns-regexp "test$"
                        :autorun   true
                        :repl-pprint  true}
                 :app {:target    :node-script
