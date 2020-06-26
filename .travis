@@ -1,0 +1,9 @@
+# can be used for travis build config et al config
+
+#shadow-cljs do-something test
+shadow-cljs release app
+mkdir target/npm-build
+cp mastodon-bot.js target/npm-build/
+cp README.md target/npm-build/
+tar -c -C target/npm-build -f target/npm-build.tar .
+npm publish ./target/npm-build.tar --access public --tag dev0
