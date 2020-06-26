@@ -49,14 +49,14 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
                       ;; optional visibility flag: direct, private, unlisted, public
                       ;; defaults to public
                       :visibility "unlisted"
-                      ;; optional boolean to mark content as sensitive
+                      ;; optional boolean to mark content as sensitive. Defaults to true.
                       :sensitive? true
                       ;; optional boolean defaults to false
                       ;; only sources containing media will be posted when set to true
                       :media-only? true
-                      ;; optional limit for the post length
+                      ;; optional limit for the post length. Defaults to 300.
                       :max-post-length 300
-                      ;; optional signature for posts
+                      ;; optional signature for posts. Defaults to "not present".
                       :signature "#newsbot"}
              ;; optionally try to resolve URLs in posts to skip URL shorteners
              ;; defaults to false

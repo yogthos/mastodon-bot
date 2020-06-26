@@ -20,8 +20,6 @@
 (def intermediate?  (s/keys :req-un [::created-at ::text ::screen_name]
                      :opt-un [::media-links ::untrimmed-text]))
 
-(def mastodon-output?  (s/keys :req-un [::created-at ::text]
-                               :opt-un [::media-links]))
 (s/def ::source-type #{:twitter :rss :tumblr})
 (s/def ::resolve-urls? boolean?)
 (s/def ::content-filter string?)
@@ -45,25 +43,9 @@
 (s/def ::target (s/multi-spec target-type ::target-type))
 
 (s/def ::transformation (s/keys :req-un [::source ::target]
-                                :opt-un [::resolve-urls? ::content-filters ::keyword-filters ::replacements]))
+                                :opt-un [::resolve-urls? ::content-filters ::keyword-filters 
+                                         ::replacements]))
 (def transformations? (s/* ::transformation))
-
-(defn trim-text [text max-post-length]
-  (cond
-
-    (nil? max-post-length)
-    text
-
-    (> (count text) max-post-length)
-    (reduce
-     (fn [text word]
-       (if (> (+ (count text) (count word)) (- max-post-length 3))
-         (reduced (str text "..."))
-         (str text " " word)))
-     ""
-     (string/split text #" "))
-    
-    :else text))
 
 (defn resolve-url [[uri]]
   (try
@@ -108,32 +90,6 @@
    input intermediate?]
   (update input :text #(reduce-kv string/replace % (:replacements transformation))))
 
-
-; TODO: move this to mastodon-api - seems to belong strongly to mastodon
-(defn-spec intermediate-to-mastodon mastodon-output?
-  [target masto/mastodon-target?
-   input intermediate?]
-  (let [{:keys [created-at text media-links screen_name untrimmed-text]} input
-        {:keys [signature append-screen-name?]} target
-        untrimmed (if (some? untrimmed-text)
-                    (str " " untrimmed-text) "")
-        sname (if append-screen-name?
-                  (str "\n#" screen_name) "")
-        signature_text (if (some? signature)
-                         (str "\n" signature)
-                         "")
-        trim-length (- (masto/max-post-length target)
-                       (count untrimmed)
-                       (count sname)
-                       (count signature_text))]
-    {:created-at created-at
-     :text (str (trim-text text trim-length)
-                untrimmed
-                sname
-                signature_text)
-     :reblogged true
-     :media-links media-links}))
-
 (defn-spec post-tweets-to-mastodon any?
   [mastodon-auth masto/mastodon-auth?
    transformation ::transformation
@@ -149,7 +105,7 @@
              (map #(intermediate-resolve-urls resolve-urls? %))
              (map #(twitter/nitter-url source %))
              (map #(perform-replacements transformation %))
-             (map #(intermediate-to-mastodon target %))
+             (map #(masto/intermediate-to-mastodon target %))
              (masto/post-items mastodon-auth target))))))
 
 (defn-spec tweets-to-mastodon any?
@@ -182,7 +138,7 @@
              (filter #(> (:created-at %) last-post-time))             
              (remove #(blocked-content? transformation (:text %)))
              (map #(perform-replacements transformation %))
-             (map #(intermediate-to-mastodon target %))
+             (map #(masto/intermediate-to-mastodon target %))
              (masto/post-items mastodon-auth target))))))
 
 (defn-spec tumblr-to-mastodon any?
@@ -201,7 +157,6 @@
                  last-post-time)
                 )))))
 
-
 (defn-spec post-rss-to-mastodon any?
   [mastodon-auth masto/mastodon-auth?
    transformation ::transformation
@@ -215,7 +170,7 @@
            (remove #(blocked-content? transformation (:text %)))
            (map #(intermediate-resolve-urls resolve-urls? %))
            (map #(perform-replacements transformation %))
-           (map #(intermediate-to-mastodon target %))
+           (map #(masto/intermediate-to-mastodon target %))
            (infra/debug-first)
            (masto/post-items mastodon-auth target)))))
 
