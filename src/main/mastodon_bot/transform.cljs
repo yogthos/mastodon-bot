@@ -171,7 +171,6 @@
            (map #(intermediate-resolve-urls resolve-urls? %))
            (map #(perform-replacements transformation %))
            (map #(masto/intermediate-to-mastodon target %))
-           (infra/debug-first)
            (masto/post-items mastodon-auth target)))))
 
 
