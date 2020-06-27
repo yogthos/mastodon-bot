@@ -4,3 +4,4 @@ package-lock.json
 /.shadow-cljs
 /node_modules
 /target
+/mastodon-bot.js
