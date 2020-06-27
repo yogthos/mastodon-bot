@@ -1,144 +1,114 @@
-#!/usr/bin/env lumo
-
 (ns mastodon-bot.core
   (:require
    [clojure.spec.alpha :as s]
    [clojure.spec.test.alpha :as st]
+   [clojure.string :as cs]
    [orchestra.core :refer-macros [defn-spec]]
-   [cljs.core :refer [*command-line-args*]]
-   [clojure.string :as string]
-   ["rss-parser" :as rss]
-   ["tumblr" :as tumblr]
+   [expound.alpha :as expound]
    [mastodon-bot.infra :as infra]
+   [mastodon-bot.transform :as transform]
    [mastodon-bot.mastodon-api :as masto]
-   [mastodon-bot.twitter-api :as twitter]))
+   [mastodon-bot.twitter-api :as twitter]
+   [mastodon-bot.tumblr-api :as tumblr]))
 
-(s/def ::mastodon-config masto/mastodon-config?)
-(s/def ::twitter twitter/twitter-config?)
-(s/def ::tumblr map?)
-(s/def ::rss map?)
+(set! s/*explain-out* expound/printer)
 
-(def config? (s/keys :req-un [::mastodon-config]
-                     :opt-un [::twitter ::tumblr ::rss]))
+(s/def ::mastodon masto/mastodon-auth?)
+(s/def ::twitter twitter/twitter-auth?)
+(s/def ::tumblr tumblr/tumblr-auth?)
+(s/def ::transform transform/transformations?)
+(s/def ::auth (s/keys :opt-un [::mastodon ::twitter ::tumblr]))
+(def config? 
+  (s/keys :req-un [::auth ::transform]))
 
-(defn-spec mastodon-config ::mastodon-config
+(s/def ::options (s/* #{"-h"}))
+(s/def ::config-location (s/? (s/and string?
+                                     #(not (cs/starts-with? % "-")))))
+(s/def ::args (s/cat :options ::options 
+                     :config-location ::config-location))
+
+(defn-spec mastodon-auth ::mastodon
   [config config?]
-  (:mastodon-config config))
+  (get-in config [:auth :mastodon]))
 
-(defn-spec twitter-config ::twitter
+(defn-spec twitter-auth ::twitter
   [config config?]
-  (:twitter config))
+  (get-in config [:auth :twitter]))
 
-(def config (infra/load-config))
+(defn-spec tumblr-auth ::tumblr
+  [config config?]
+  (get-in config [:auth :tumblr]))
 
-(defn trim-text [text]
-  (let [max-post-length (masto/max-post-length (mastodon-config config))]
-    (cond
+(defn-spec transform ::transform
+  [config config?]
+  (:transform config))
 
-      (nil? max-post-length)
-      text
+(defn-spec transform! any?
+  [config config?]
+  (let [mastodon-auth (mastodon-auth config)]  
+    (masto/get-mastodon-timeline
+     mastodon-auth
+     (fn [timeline]
+       (let [last-post-time (-> timeline first :created_at (js/Date.))]
+         (let [{:keys [transform]} config]
+           (doseq [transformation transform]
+             (let [source-type (get-in transformation [:source :source-type])
+                   target-type (get-in transformation [:target :target-type])]               
+               (cond
+               ;;post from Twitter
+                 (and (= :twitter source-type)
+                      (= :mastodon target-type))
+                 (when-let [twitter-auth (twitter-auth config)]
+                   (transform/tweets-to-mastodon
+                    mastodon-auth
+                    twitter-auth
+                    transformation
+                    last-post-time))
+               ;;post from RSS
+                 (and (= :rss source-type)
+                      (= :mastodon target-type))
+                 (transform/rss-to-mastodon
+                  mastodon-auth
+                  transformation
+                  last-post-time)
+               ;;post from Tumblr
+                 (and (= :tumblr source-type)
+                      (= :mastodon target-type))
+                 (when-let [tumblr-auth (tumblr-auth config)]
+                   (transform/tumblr-to-mastodon
+                    mastodon-auth
+                    tumblr-auth
+                    transformation
+                    last-post-time))
+                 ))))
+)))))
 
-      (> (count text) max-post-length)
-      (reduce
-       (fn [text word]
-         (if (> (+ (count text) (count word)) (- max-post-length 3))
-           (reduced (str text "..."))
-           (str text " " word)))
-       ""
-       (string/split text #" "))
+(def usage
+  "usage:
+                  
+  node target/mastodon-bot.js [-h] /path/to/config.edn 
+  
+  or
+  
+  npm start [-h] /path/to/config.edn
+  ")
 
-      :else text)))
+(defn main [& args]
+  (let [parsed-args (s/conform ::args args)]
+    (if (= ::s/invalid parsed-args)
+      (do (s/explain ::args args)
+          (infra/exit-with-error (str "Bad commandline arguments\n" usage)))
+      (let [{:keys [options config-location]} parsed-args]
+        (cond
+          (some #(= "-h" %) options)
+          (print usage)
+          :default
+          (let [config (infra/load-config config-location)]
+            (when (not (s/valid? config? config))
+              (s/explain config? config)
+              (infra/exit-with-error "Bad configuration"))
+            (transform! config)))))))
 
-(defn in [needle haystack]
-  (some (partial = needle) haystack))
-
-; If the text ends in a link to the media (which is uploaded anyway),
-; chop it off instead of including the link in the toot
-(defn chop-tail-media-url [text media]
-  (string/replace text #" (\S+)$" #(if (in (%1 1) (map :url media)) "" (%1 0))))
-
-(defn parse-tweet [{created-at            :created_at
-                    text                  :full_text
-                    {:keys [media]}       :extended_entities
-                    {:keys [screen_name]} :user :as tweet}]
-  {:created-at (js/Date. created-at)
-   :text (trim-text (str (chop-tail-media-url text media) 
-                         (if (masto/append-screen-name? (mastodon-config config)) 
-                           (str "\n - " screen_name) "")))
-   :media-links (keep #(when (= (:type %) "photo") (:media_url_https %)) media)})
-
-(defmulti parse-tumblr-post :type)
-
-(defmethod parse-tumblr-post "text" [{:keys [body date short_url]}]
-  {:created-at (js/Date. date)
-   :text (str (trim-text body) "\n\n" short_url)})
-
-(defmethod parse-tumblr-post "photo" [{:keys [caption date photos short_url] :as post}]
-  {:created-at (js/Date. date)
-   :text (string/join "\n" [(string/replace caption #"<[^>]*>" "") short_url])
-   :media-links (mapv #(-> % :original_size :url) photos)})
-
-(defmethod parse-tumblr-post :default [post])
-
-(defn post-tumblrs [last-post-time]
-  (fn [err response]
-    (->> response
-         infra/js->edn
-         :posts
-         (mapv parse-tumblr-post)
-         (masto/post-items 
-          (mastodon-config config)
-          last-post-time))))
-
-(defn post-tweets [last-post-time]
-  (fn [error tweets response]
-    (if error
-      (infra/exit-with-error error)
-      (->> (infra/js->edn tweets)
-           (map parse-tweet)
-           (masto/post-items 
-            (mastodon-config config)
-            last-post-time)))))
-
-(defn parse-feed [last-post-time parser [title url]]
-  (-> (.parseURL parser url)
-      (.then #(masto/post-items
-               (mastodon-config config)
-               last-post-time
-               (for [{:keys [title isoDate pubDate content link]} (-> % infra/js->edn :items)]
-                 {:created-at (js/Date. (or isoDate pubDate))
-                  :text (str (trim-text title) "\n\n" (twitter/strip-utm link))})))))
-
-(defn tumblr-client [access-keys account]
-  (try
-    (tumblr/Blog. account (clj->js access-keys))
-    (catch js/Error e
-      (infra/exit-with-error
-       (str "failed to connect to Tumblr account " account ": " (.-message e))))))
-
-(defn -main []
-  (masto/get-mastodon-timeline
-   (mastodon-config config)
-   (fn [timeline]
-     (let [last-post-time (-> timeline first :created_at (js/Date.))]
-     ;;post from Twitter
-       (when-let [twitter-config (:twitter config)]
-         (let [{:keys [accounts]} twitter-config]
-           (doseq [account accounts]
-             (twitter/user-timeline
-              twitter-config
-              account
-              (post-tweets last-post-time)))))
-     ;;post from Tumblr
-       (when-let [{:keys [access-keys accounts limit]} (:tumblr config)]
-         (doseq [account accounts]
-           (let [client (tumblr-client access-keys account)]
-             (.posts client #js {:limit (or limit 5)} (post-tumblrs last-post-time)))))
-     ;;post from RSS
-       (when-let [feeds (some-> config :rss)]
-         (let [parser (rss.)]
-           (doseq [feed feeds]
-             (parse-feed last-post-time parser feed))))))))
-
-(set! *main-cli-fn* -main)
-(st/instrument 'mastodon-config)
+(st/instrument 'mastodon-auth)
+(st/instrument 'twitter-auth)
+(st/instrument 'transform)

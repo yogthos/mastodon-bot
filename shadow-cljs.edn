@@ -1,12 +1,12 @@
 {:source-paths ["src/main"
                 "src/test"]
- :dependencies [[orchestra "2018.12.06-2"]]
- :builds       {:dev {:target       :node-library
-                      :output-to    "target/lib-mastodon-bot.js"
-                      :exports   {:infra mastodon-bot.core/-main}
-                      :repl-pprint  true
-                      }
+ :dependencies [[orchestra "2019.02.06-1"]
+                [expound "0.8.4"]]
+ :builds       {:test {:target    :node-test
+                       :output-to "target/node-tests.js"
+                       :autorun   true
+                       :repl-pprint  true}
                 :app {:target    :node-script
-                      :output-to "target/mastodon-bot.js"
+                      :output-to "mastodon-bot.js"
                       :main      mastodon-bot.core/main
                       :compiler-options {:optimizations :simple}}}}
