@@ -97,18 +97,12 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
 
 * transformations have source `(s/def ::source-type #{:twitter :rss :tumblr})` und target `(s/def ::target-type #{:mastodon})` you can combine freely. Multiple transformations for same source-target combination are possible. Source and targets refer to the auth section for their credentials.
 
+* compile: `npx shadow-cljs release app`
+
 * run the bot: `npm start`
 * to poll at intervals setup a cron job such as:
 
     */30 * * * * npm start /path/to/config.edn > /dev/null 2>&1
-
-### compiling to Js
-
-Alternatively, the bot can be compiled directly to JavaScript using the following command:
-
-```
-npx shadow-cljs release app
-```
 
 ## License
 
