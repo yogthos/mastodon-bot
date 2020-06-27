@@ -20,7 +20,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm install
-    - run: npm install shadow-cljs
+    - run: npm install -g --save-dev shadow-cljs
     - run: shadow-cljs compile test
     - run: shadow-cljs release app
     - run: rm -rf target/npm-build 
