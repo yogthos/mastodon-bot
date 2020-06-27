@@ -10,9 +10,9 @@ mkdir target/npm-build
 cp mastodon-bot.js target/npm-build/
 cp package.json target/npm-build/
 cp README.md target/npm-build/
-tar -c -C target/npm-build -f target/npm-build.tar .
+tar -cz -C target/npm-build -f target/npm-build.tgz .
 
-npm publish ./target/npm-build.tar --access public --tag dev0
+npm publish ./target/npm-build.tgz --access public --tag dev0
 ```
 
 ## prod release (should be done from master)
@@ -34,9 +34,9 @@ mkdir target/npm-build
 cp mastodon-bot.js target/npm-build/
 cp package.json target/npm-build/
 cp README.md target/npm-build/
-tar -c -C target/npm-build -f target/npm-build.tar .
+tar -cz -C target/npm-build -f target/npm-build.tgz .
 
-npm publish ./target/npm-build.tar --access public --tag [version]
+npm publish ./target/npm-build.tgz --access public --tag [version]
 
 # Bump version
 vi shadow-cljs.edn
