@@ -67,8 +67,12 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
              ;; optional keyword filter regexes
              ;; any posts not matching the regexes will be filtered out
              :keyword-filters [".*clojure.*"]
-             ;; TODO: Description & example missing here
-             :replacements nil}
+             ;; optional replacements
+             ;; When the strings on the left side of this map are encountered in the source,
+             ;; they are replaced with the string on the right side of the map:
+             :replacements {
+               "@openSUSE" "@opensuse@fosstodon.org",
+               "@conservancy" "@conservancy@mastodon.technology"}}
 
              {:source {:source-type :rss
                        ;; add RSS config to follow feeds

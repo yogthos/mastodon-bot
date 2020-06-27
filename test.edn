@@ -47,8 +47,23 @@
    ;; optional keyword filter regexes
    ;; any posts not matching the regexes will be filtered out
    :keyword-filters [".*clojure.*"]
-   ;; TODO: Description & example missing here
-   :replacements nil}
+   ;; optional replacements
+   ;; When the strings on the left side of this map are encountered in the source,
+   ;; they are replaced with the string on the right side of the map:
+   :replacements {
+     "@openSUSE " "@opensuse@fosstodon.org ",
+     "@archlinux " "",
+     "@lolamby " "",
+     "@conservancy " "@conservancy@mastodon.technology ",
+     "@prototypefund " "@PrototypeFund@mastodon.social ",
+     "@coreboot_org " "",
+     "@OpenTechFund " "",
+     "@OpenWrtSummit " "",
+     "@OpenMirage " "",
+     "@debian " "@debian@fosstodon.org ",
+     "@nixos_org " "",
+     "@lwnnet " "",
+     "@guixhpc" ""}}
 
   {:source {:source-type :rss
             ;; add RSS config to follow feeds
