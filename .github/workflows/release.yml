@@ -41,10 +41,11 @@ jobs:
     - name: build em
       run: |
         shadow-cljs release app
+        chmod a+x mastodon-bot.js
 
     - name: package release
       run: |
-        mkdir -p target/npm-build
+        mkdir -p target/npm-build        
         cp mastodon-bot.js target/npm-build/
         cp package.json target/npm-build/
         cp README.md target/npm-build/
