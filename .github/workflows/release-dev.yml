@@ -40,11 +40,14 @@ jobs:
 
     - name: build em
       run: |
-        shadow-cljs release app && \
-        mkdir -p target/npm-build && \ 
-        cp mastodon-bot.js target/npm-build/ && \
-        cp package.json target/npm-build/ && \
-        cp README.md target/npm-build/ && \
+        shadow-cljs release app
+
+    - name: package release
+      run: |
+        mkdir -p target/npm-build
+        cp mastodon-bot.js target/npm-build/
+        cp package.json target/npm-build/
+        cp README.md target/npm-build/
         tar -cz -C target/npm-build -f target/npm-build.tgz .
 
     - name: Create Release
