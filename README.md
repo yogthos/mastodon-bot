@@ -1,5 +1,7 @@
 ### description
 
+![Node.js CI](https://github.com/yogthos/mastodon-bot/workflows/Node.js%20CI/badge.svg)
+
 the bot will post the timeline from the specified Twitter/Tumblr accounts and RSS feeds to Mastodon
 
 ### installation
