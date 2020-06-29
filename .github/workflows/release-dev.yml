@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [10.x, 12.x, 14.x]
+        node-version: [14.x]
 
     steps:
     - uses: actions/checkout@v2
@@ -33,15 +33,19 @@ jobs:
         node-version: ${{ matrix.node-version }}
     
     - name: test em
-      run: npm install && npm install -g --save-dev shadow-cljs && shadow-cljs compile test
-
-    - name: build release with node.js 14.x
-      uses: actions/setup-node@v1
-      with:
-        node-version: 14.x
+      run: | 
+        npm install && \
+        npm install -g --save-dev shadow-cljs && \
+        shadow-cljs compile test
 
     - name: build em
-      run: shadow-cljs release app && mkdir -p target/npm-build && cp mastodon-bot.js target/npm-build/ && cp package.json target/npm-build/ && cp README.md target/npm-build/ && tar -cz -C target/npm-build -f target/npm-build.tgz .
+      run: |
+        shadow-cljs release app && \
+        mkdir -p target/npm-build && \ 
+        cp mastodon-bot.js target/npm-build/ && \
+        cp package.json target/npm-build/ && \
+        cp README.md target/npm-build/ && \
+        tar -cz -C target/npm-build -f target/npm-build.tgz .
 
     - name: Create Release
       id: create_release
