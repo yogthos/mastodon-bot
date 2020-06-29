@@ -2,7 +2,7 @@
   "name": "mastodon-bot",
   "description": "Bot to publish twitter, tumblr or rss posts to an mastodon account.",
   "author": "Dmitri Sotnikov",
-  "version": "0.1.0-dev-0",
+  "version": "0.1.0-dev-1",
   "homepage": "https://github.com/yogthos/mastodon-bot",
   "repository": "https://github.com/yogthos/mastodon-bot",
   "license": "MIT",
@@ -18,8 +18,8 @@
     "shadow-cljs": "^2.8.37"
   },
   "main": "mastodon-bot.js",
-  "scripts": {
-    "start": "node mastodon-bot.js"
+  "bin": {
+    "mastodon-bot": "./mastodon-bot.js"
   },
   "keywords": [
     "cljs",

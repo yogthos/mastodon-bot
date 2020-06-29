@@ -1,11 +1,17 @@
 ### description
 
+![Node.js CI](https://github.com/yogthos/mastodon-bot/workflows/Node.js%20CI/badge.svg)
+
 the bot will post the timeline from the specified Twitter/Tumblr accounts and RSS feeds to Mastodon
 
 ### installation
 
-1. install [Node.js](https://nodejs.org/en/)
-2. run `npm install` to install Node modules
+1. prerequisits
+1.1 [Node.js](https://nodejs.org/en/)
+1.2 npm
+2. install with `sudo npm install mastodon-bot -g`
+3. run with `mastodon-bot -h`
+
 
 ### usage
 
