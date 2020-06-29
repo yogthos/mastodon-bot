@@ -3,7 +3,7 @@
 while true; do
   echo "Polling Bot"
   cd /mastodon-bot
-  npm start
+  mastodon-bot
   echo "Poll done, waiting 600 seconds"
   sleep 600
 done

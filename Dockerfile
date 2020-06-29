@@ -3,9 +3,7 @@ FROM node:10-slim
 RUN apt-get update && apt-get install --assume-yes software-properties-common && \
   apt-get install --assume-yes git cron
 
-RUN git clone https://github.com/yogthos/mastodon-bot /mastodon-bot && \
-  cd /mastodon-bot && npm install && \
-  npm install -g lumo-cljs
+RUN npm install -g mastodon-bot
 
 RUN mkdir /config && touch /config/config.edn && touch /var/log/cron.log
 

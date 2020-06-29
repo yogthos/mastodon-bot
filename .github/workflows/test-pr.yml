@@ -3,6 +3,8 @@ name: test PR
 on:
   pull_request:
     branches: [ master ]
+  push: 
+    ingnored-branches: [ 'master' ]
 
 jobs:
   test-matrix:

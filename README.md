@@ -6,11 +6,9 @@ the bot will post the timeline from the specified Twitter/Tumblr accounts and RS
 
 ### installation
 
-1. prerequisits
-1.1 [Node.js](https://nodejs.org/en/)
-1.2 npm
-2. install with `sudo npm install mastodon-bot -g`
-3. run with `mastodon-bot -h`
+1. prerequisits: should be installed: [Node.js](https://nodejs.org/en/), npm
+2. install mastodon-bot with: `sudo npm install mastodon-bot -g`
+3. run with: `mastodon-bot -h`
 
 
 ### usage
