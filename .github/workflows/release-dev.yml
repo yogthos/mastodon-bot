@@ -24,7 +24,7 @@ jobs:
     - run: npm install -g --save-dev shadow-cljs
     - run: shadow-cljs compile test
 
-  release-dev:
+  release-build-dev:
     name: release dev
     needs: test-matrix
     runs-on: ubuntu-latest
@@ -42,8 +42,30 @@ jobs:
     - run: npm install -g --save-dev shadow-cljs
     - run: shadow-cljs release app
     - run: rm -rf target/npm-build 
-    - run: mkdir target/npm-build
+    - run: mkdir -p target/npm-build
     - run: cp mastodon-bot.js target/npm-build/
     - run: cp package.json target/npm-build/
     - run: cp README.md target/npm-build/
     - run: tar -cz -C target/npm-build -f target/npm-build.tgz .
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: true
+        prerelease: true
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./mastodon-bot.js
+        asset_name: mastodon-bot.js
+        asset_content_type: application/json
+      
