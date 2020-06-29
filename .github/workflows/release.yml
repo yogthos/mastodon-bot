@@ -45,16 +45,6 @@ jobs:
         sha256sum mastodon-bot.js > target/mastodon-bot.js.sha256
         sha512sum mastodon-bot.js > target/mastodon-bot.js.sha512
 
-    - name: package release
-      run: |
-        mkdir -p target/npm-build        
-        cp mastodon-bot.js target/npm-build/
-        cp target/mastodon-bot.js.sha256 target/npm-build/
-        cp target/mastodon-bot.js.sha512 target/npm-build/
-        cp package.json target/npm-build/
-        cp README.md target/npm-build/
-        tar -cz -C target/npm-build -f target/npm-build.tgz .
-
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -98,3 +88,16 @@ jobs:
         asset_path: ./target/mastodon-bot.js.sha512
         asset_name: mastodon-bot.js.sha512
         asset_content_type: application/json
+
+    - name: upload to npm
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: |
+        mkdir -p target/npm-build        
+        cp mastodon-bot.js target/npm-build/
+        cp target/mastodon-bot.js.sha256 target/npm-build/
+        cp target/mastodon-bot.js.sha512 target/npm-build/
+        cp package.json target/npm-build/
+        cp README.md target/npm-build/
+        tar -cz -C target/npm-build -f target/npm-build.tgz .
+        npm publish ./target/npm-build.tgz --access public --dry-run
