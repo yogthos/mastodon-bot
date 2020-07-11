@@ -54,8 +54,9 @@
 (defn-spec nitter-url map?
   [source twitter-source?
    parsed-tweet map?]
-  (when (:nitter-urls? source)
-    (update parsed-tweet :text #(string/replace % #"https://twitter.com" "https://nitter.net"))))
+  (if (:nitter-urls? source)
+    (update parsed-tweet :text #(string/replace % #"https://twitter.com" "https://nitter.net"))
+    parsed-tweet))
 
 (defn-spec user-timeline any?
   [twitter-auth twitter-auth?
