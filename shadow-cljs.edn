@@ -8,5 +8,4 @@
                        :repl-pprint  true}
                 :app {:target    :node-script
                       :output-to "mastodon-bot.js"
-                      :main      mastodon-bot.core/main
-                      :compiler-options {:optimizations :simple}}}}
+                      :main      mastodon-bot.core/main}}}
