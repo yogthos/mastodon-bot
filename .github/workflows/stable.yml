@@ -1,11 +1,11 @@
-name: release prod
+name: stable
 on:
   push:
     tags: '[0-9]+.[0-9]+.[0-9]+*'
 
 jobs:
-  test-matrix:
-    name: matrix test
+  stable:
+    name: stable
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -13,19 +13,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-
-    - name: Cache node modules
-      uses: actions/cache@v2
-      env:
-        cache-name: cache-node-modules
-      with:
-        # npm cache files are stored in `~/.npm` on Linux/macOS
-        path: ~/.npm
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package.json') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
           
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
@@ -44,6 +31,7 @@ jobs:
         chmod a+x mastodon-bot.js
         sha256sum mastodon-bot.js > target/mastodon-bot.js.sha256
         sha512sum mastodon-bot.js > target/mastodon-bot.js.sha512
+        shadow-cljs run shadow.cljs.build-report app target/build-report.html
 
     - name: Create Release
       id: create_release
@@ -65,7 +53,7 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./mastodon-bot.js
         asset_name: mastodon-bot.js
-        asset_content_type: application/json
+        asset_content_type: application/javascript
 
     - name: Upload mastodon-bot.js.sha256
       id: upload-mastodon-bot-js-sha256
@@ -76,7 +64,7 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./target/mastodon-bot.js.sha256
         asset_name: mastodon-bot.js.sha256
-        asset_content_type: application/json
+        asset_content_type: text/plain
 
     - name: Upload mastodon-bot.js.sha512
       id: upload-mastodon-bot-js-sha512
@@ -87,7 +75,18 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./target/mastodon-bot.js.sha512
         asset_name: mastodon-bot.js.sha512
-        asset_content_type: application/json
+        asset_content_type: text/plain
+
+    - name: Upload build-report
+      id: build-report
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./target/build-report
+        asset_name: build-report.html
+        asset_content_type: text/html
 
     - name: upload to npm
       env:
@@ -99,4 +98,4 @@ jobs:
         cp target/mastodon-bot.js.sha512 target/npm-build/mastodon_bot/
         cp package.json target/npm-build/mastodon_bot/
         cp README.md target/npm-build/mastodon_bot/
-        npm publish ./target/npm-build --access public --dry-run
+        npm publish ./target/npm-build --access public
