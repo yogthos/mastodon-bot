@@ -32,7 +32,7 @@ shadow-cljs release app
 shadow-cljs release app
 chmod a+x mastodon-bot.js
 rm -rf target/npm-build 
-mkdir target/npm-build
+mkdir -p target/npm-build
 cp mastodon-bot.js target/npm-build/
 cp package.json target/npm-build/
 cp README.md target/npm-build/
