@@ -98,4 +98,4 @@ jobs:
         cp target/mastodon-bot.js.sha512 target/npm-build/mastodon_bot/
         cp package.json target/npm-build/mastodon_bot/
         cp README.md target/npm-build/mastodon_bot/
-        npm publish ./target/npm-build --access public --dry-run
+        npm publish ./target/npm-build --access public
