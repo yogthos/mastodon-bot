@@ -2,44 +2,36 @@
 
 ## dev release
 ```
+# run the tests
 shadow-cljs compile test
 
+# release the app
 shadow-cljs release app
 chmod a+x mastodon-bot.js
-rm -rf target/npm-build 
-mkdir target/npm-build
-cp mastodon-bot.js target/npm-build
-cp package.json target/npm-build
-cp README.md target/npm-build
 
+# publish to npm
+mkdir -p target/npm-build/mastodon_bot
+cp mastodon-bot.js target/npm-build/mastodon_bot/
+cp target/mastodon-bot.js.sha256 target/npm-build/mastodon_bot/
+cp target/mastodon-bot.js.sha512 target/npm-build/mastodon_bot/
+cp package.json target/npm-build/mastodon_bot/
+cp README.md target/npm-build/mastodon_bot/
 npm publish ./target/npm-build --access public
 ```
 
-## prod release (should be done from master)
+## stable release (should be done from master)
 ```
 shadow-cljs compile test
 
-#adjust version
-vi shadow-cljs.edn
+#adjust [version]
+vi package.json
 
 git commit -am "releasing"
-git tag [version]
-git push && git push --tag
+git commit -am [version]
+git push --follow-tags
 
-shadow-cljs release app
-
-shadow-cljs release app
-chmod a+x mastodon-bot.js
-rm -rf target/npm-build 
-mkdir target/npm-build
-cp mastodon-bot.js target/npm-build
-cp package.json target/npm-build
-cp README.md target/npm-build
-
-npm publish ./target/npm-build --access public
-
-# Bump version
-vi shadow-cljs.edn
+# Bump [version]
+vi package.json
 
 git commit -am "version bump" && git push
 ```
