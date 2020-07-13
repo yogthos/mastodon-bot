@@ -8,12 +8,11 @@ shadow-cljs release app
 chmod a+x mastodon-bot.js
 rm -rf target/npm-build 
 mkdir target/npm-build
-cp mastodon-bot.js target/npm-build/
-cp package.json target/npm-build/
-cp README.md target/npm-build/
-tar -cz -C target/npm-build -f target/npm-build.tgz .
+cp mastodon-bot.js target/npm-build
+cp package.json target/npm-build
+cp README.md target/npm-build
 
-npm publish ./target/npm-build.tgz --access public
+npm publish ./target/npm-build --access public
 ```
 
 ## prod release (should be done from master)
@@ -32,13 +31,12 @@ shadow-cljs release app
 shadow-cljs release app
 chmod a+x mastodon-bot.js
 rm -rf target/npm-build 
-mkdir -p target/npm-build
-cp mastodon-bot.js target/npm-build/
-cp package.json target/npm-build/
-cp README.md target/npm-build/
-tar -cz -C target/npm-build -f target/npm-build.tgz .
+mkdir target/npm-build
+cp mastodon-bot.js target/npm-build
+cp package.json target/npm-build
+cp README.md target/npm-build
 
-npm publish ./target/npm-build.tgz --access public
+npm publish ./target/npm-build --access public
 
 # Bump version
 vi shadow-cljs.edn

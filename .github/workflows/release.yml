@@ -92,11 +92,10 @@ jobs:
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       run: |
-        mkdir -p target/npm-build        
-        cp mastodon-bot.js target/npm-build/
-        cp target/mastodon-bot.js.sha256 target/npm-build/
-        cp target/mastodon-bot.js.sha512 target/npm-build/
-        cp package.json target/npm-build/
-        cp README.md target/npm-build/
-        tar -cz -C target/npm-build -f target/npm-build.tgz .
-        npm publish ./target/npm-build.tgz --access public --dry-run
+        mkdir -p target/npm-build/mastodon_bot
+        cp mastodon-bot.js target/npm-build/mastodon_bot/
+        cp target/mastodon-bot.js.sha256 target/npm-build/mastodon_bot/
+        cp target/mastodon-bot.js.sha512 target/npm-build/mastodon_bot/
+        cp package.json target/npm-build/mastodon_bot/
+        cp README.md target/npm-build/mastodon_bot/
+        npm publish ./target/npm-build --access public --dry-run
