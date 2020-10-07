@@ -20,15 +20,25 @@
   (js/process.exit 1))
 
 (defn find-config [config-location]
-  (let [config (or config-location
-                   (-> js/process .-env .-MASTODON_BOT_CONFIG)
-                   "config.edn")]
-    (if (fs/existsSync config)
-      config
-      (exit-with-error (str "failed to read config: " config)))))
+  (or config-location
+      (-> js/process .-env .-MASTODON_BOT_CONFIG)
+      "config.edn"))
 
-(defn load-config [config-location]
+(defn read-edn [config]
+  (if config
+    (if (fs/existsSync config)
+       ;(edn/read-string (fs/readFileSync #js {:encoding "UTF-8"} config))
+       (edn/read-string (fs/readFileSync config "UTF-8"))
+       (exit-with-error (str "config file does not exist: " config)))
+    nil))
+
+(defn load-credentials-config []
+  (read-edn (-> js/process .-env .-MASTODON_BOT_CREDENTIALS)))
+
+(defn load-main-config [config-location]
   (-> config-location
       (find-config)
-      (fs/readFileSync #js {:encoding "UTF-8"})
-      edn/read-string))
+      (read-edn)))
+
+(defn load-config [config-location]
+  (merge (load-main-config config-location) (load-credentials-config)))
