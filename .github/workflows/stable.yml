@@ -76,17 +76,6 @@ jobs:
         asset_name: mastodon-bot.js.sha512
         asset_content_type: text/plain
 
-    - name: Upload build-report
-      id: build-report
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./target/build-report
-        asset_name: build-report.html
-        asset_content_type: text/html
-
     - name: upload to npm
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
