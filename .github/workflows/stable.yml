@@ -31,7 +31,6 @@ jobs:
         chmod a+x mastodon-bot.js
         sha256sum mastodon-bot.js > target/mastodon-bot.js.sha256
         sha512sum mastodon-bot.js > target/mastodon-bot.js.sha512
-        shadow-cljs run shadow.cljs.build-report app target/build-report.html
 
     - name: Create Release
       id: create_release
