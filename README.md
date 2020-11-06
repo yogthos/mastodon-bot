@@ -4,6 +4,8 @@
 
 the bot will post the timeline from the specified Twitter/Tumblr accounts and RSS feeds to Mastodon
 
+[![NPM](https://nodei.co/npm/mastodon-bot.png?compact=true)](https://www.npmjs.com/package/mastodon-bot)
+
 ### installation
 
 1. prerequisits: should be installed: [Node.js](https://nodejs.org/en/), npm
