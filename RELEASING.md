@@ -34,4 +34,9 @@ git push --follow-tags
 vi package.json
 
 git commit -am "version bump" && git push
+
+
+# trigger deploy
+git tag [version]
+git push --tags
 ```
