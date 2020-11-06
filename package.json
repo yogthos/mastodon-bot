@@ -2,7 +2,7 @@
   "name": "mastodon-bot",
   "description": "Bot to publish twitter, tumblr or rss posts to an mastodon account.",
   "author": "Dmitri Sotnikov",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "homepage": "https://github.com/yogthos/mastodon-bot",
   "repository": "https://github.com/yogthos/mastodon-bot",
   "license": "MIT",
