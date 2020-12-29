@@ -85,12 +85,10 @@
 
 (def usage
   "usage:
-                  
-  node target/mastodon-bot.js [-h] /path/to/config.edn 
   
-  or
+  mastodon-bot /path/to/config.edn
   
-  npm start [-h] /path/to/config.edn
+  set MASTODON_BOT_CONFIG environment variable to run without parameters
   ")
 
 (defn main [& args]
