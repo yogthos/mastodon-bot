@@ -10,7 +10,7 @@ the bot will post the timeline from the specified Twitter/Tumblr accounts and RS
 
 1. prerequisits: should be installed: [Node.js](https://nodejs.org/en/), npm
 2. install mastodon-bot with: `sudo npm install mastodon-bot -g`
-3. run with: `mastodon-bot -h`
+3. run with: `mastodon-bot <path to config>`
 
 
 ### usage
@@ -103,8 +103,8 @@ with later timestamps to avoid duplicate posts. On the first run the timestamp w
 
 * transformations have source `(s/def ::source-type #{:twitter :rss :tumblr})` und target `(s/def ::target-type #{:mastodon})` you can combine freely. Multiple transformations for same source-target combination are possible. Source and targets refer to the auth section for their credentials.
 
+* install NPM modules: `npm install`
 * compile: `npx shadow-cljs release app`
-
 * run the bot: `npm start`
 * to poll at intervals setup a cron job such as:
 
