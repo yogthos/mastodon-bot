@@ -1,0 +1,12 @@
+image:  node:lts
+
+stages:
+  - test
+  - build
+
+build:
+  stage: test
+  script:
+    - npm install
+    - npm install -g --save-dev shadow-cljs
+    - shadow-cljs compile test
