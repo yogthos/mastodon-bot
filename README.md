@@ -1,3 +1,6 @@
+# This Repository has been moved to https://gitlab.com/yogthos/mastodon-bot
+please follow and find current development there
+
 ### description
 
 ![Node.js CI](https://github.com/yogthos/mastodon-bot/workflows/Node.js%20CI/badge.svg)
